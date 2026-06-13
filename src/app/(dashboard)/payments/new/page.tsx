@@ -115,7 +115,7 @@ export default function NewPaymentPage() {
           <button
             type="submit"
             disabled={loading || approvedVendors.length === 0}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
           >
             {loading ? "Submitting…" : "Submit payment request"}
           </button>

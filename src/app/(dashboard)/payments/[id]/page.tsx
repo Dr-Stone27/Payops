@@ -273,7 +273,7 @@ export default function PaymentDetailPage() {
                 <button
                   onClick={handleApprove}
                   disabled={loading || pin.length !== 4}
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white text-sm font-medium rounded-lg"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg"
                 >
                   {loading ? "Verifying PIN…" : "Approve & dispatch"}
                 </button>
