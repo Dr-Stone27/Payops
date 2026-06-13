@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Business {
+  id        String   @id @default(cuid())
+  name      String
+  cacNumber String   @unique
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+
+  users     User[]
+  vendors   Vendor[]
+  payments  PaymentRequest[]
+  auditLogs AuditLog[]
+}
+
+model User {
+  id                String    @id @default(cuid())
+  businessId        String
+  business          Business  @relation(fields: [businessId], references: [id])
+  fullName          String
+  email             String    @unique
+  passwordHash      String
+  pinHash           String?
+  role              String
+  pinFailedAttempts Int       @default(0)
+  pinLockedUntil    DateTime?
+  createdAt         DateTime  @default(now())
+
+  sessions     Session[]
+  auditLogs    AuditLog[]
+  madePayments PaymentRequest[] @relation("MakerRelation")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Vendor {
+  id                          String    @id @default(cuid())
+  businessId                  String
+  business                    Business  @relation(fields: [businessId], references: [id])
+  legalName                   String
+  cacNumber                   String
+  nubanHash                   String
+  nubanEncrypted              String
+  nubanLast4                  String
+  bankName                    String
+  cacRegisteredName           String
+  nubanAccountName            String
+  kybStatus                   String    @default("verification_pending")
+  jaroWinklerScore            Float?
+  manuallyApprovedBy          String?
+  manuallyApprovedAt          DateTime?
+  manualApprovalJustification String?
+  createdAt                   DateTime  @default(now())
+
+  payments PaymentRequest[]
+}
+
+model PaymentRequest {
+  id                         String    @id @default(cuid())
+  businessId                 String
+  business                   Business  @relation(fields: [businessId], references: [id])
+  vendorId                   String
+  vendor                     Vendor    @relation(fields: [vendorId], references: [id])
+  makerId                    String
+  maker                      User      @relation("MakerRelation", fields: [makerId], references: [id])
+  invoiceNumber              String
+  amount                     Int
+  invoicePdfName             String?
+  costCenter                 String?
+  status                     String    @default("pending_approval")
+  exceptionCategory          String?
+  complianceReviewResolvedBy String?
+  complianceTrigger          String?
+  rejectionReason            String?
+  version                    Int       @default(1)
+  retentionLocked            Boolean   @default(false)
+  transactionReference       String?
+  settledAmount              Int?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  auditLogs     AuditLog[]
+  webhookEvents WebhookEvent[]
+}
+
+model AuditLog {
+  id              String          @id @default(cuid())
+  businessId      String
+  business        Business        @relation(fields: [businessId], references: [id])
+  userId          String?
+  user            User?           @relation(fields: [userId], references: [id])
+  paymentId       String?
+  payment         PaymentRequest? @relation(fields: [paymentId], references: [id])
+  action          String
+  detail          String?
+  outcome         String
+  ipAddress       String?
+  retentionLocked Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+}
+
+model WebhookEvent {
+  id                   String         @id @default(cuid())
+  paymentId            String
+  payment              PaymentRequest @relation(fields: [paymentId], references: [id])
+  transactionReference String         @unique
+  settlementStatus     String
+  settledAmount        Int
+  rawPayload           String
+  retentionLocked      Boolean        @default(false)
+  createdAt            DateTime       @default(now())
+}
