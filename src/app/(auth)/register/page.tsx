@@ -47,7 +47,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="pb-3 border-b border-gray-100">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Your details</p>
+              <p className="text-xs font-medium text-gray-500 mb-3">Your details</p>
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
@@ -82,7 +82,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Business details</p>
+              <p className="text-xs font-medium text-gray-500 mb-3">Business details</p>
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
@@ -108,7 +108,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white text-sm font-medium rounded-lg transition-colors"
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
             >
               {loading ? "Creating account…" : "Create account"}
             </button>

@@ -34,9 +34,15 @@ export default async function ExceptionsPage() {
       </div>
 
       {exceptions.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl px-5 py-12 text-center">
-          <p className="text-sm text-gray-400">No exceptions. ✓</p>
-          <p className="text-xs text-gray-300 mt-1">Exceptions appear here when PSP fails or amounts mismatch.</p>
+        <div className="bg-white border border-gray-200 rounded-xl px-5 py-14 text-center">
+          <div className="inline-flex items-center justify-center w-10 h-10 bg-emerald-50 rounded-full mb-3">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-emerald-600">
+              <path d="M10 2l1.5 5.5h5.5L12.5 11l2 5.5L10 13.5 5.5 16.5l2-5.5L3 7.5h5.5L10 2z" opacity="0"/>
+              <path d="M5 10l3.5 3.5L15 7" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-gray-700">No exceptions</p>
+          <p className="text-xs text-gray-400 mt-1">PSP failures, amount mismatches outside NIP tolerance, and timed-out settlements appear here for manual review.</p>
         </div>
       ) : (
         <div className="space-y-3">

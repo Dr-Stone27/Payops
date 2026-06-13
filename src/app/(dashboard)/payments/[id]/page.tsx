@@ -228,14 +228,14 @@ export default function PaymentDetailPage() {
               <button
                 onClick={() => handleCompliance("clear")}
                 disabled={loading}
-                className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-200 text-white text-xs font-medium rounded-lg"
+                className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
               >
                 {loading ? "…" : "Clear review — proceed to approval"}
               </button>
               <button
                 onClick={() => handleCompliance("block")}
                 disabled={loading}
-                className="flex-1 py-2 bg-white hover:bg-red-50 border border-red-300 text-red-700 text-xs font-medium rounded-lg"
+                className="flex-1 py-2 bg-white hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed border border-red-300 text-red-700 text-xs font-medium rounded-lg transition-colors"
               >
                 Block payment
               </button>
@@ -256,30 +256,29 @@ export default function PaymentDetailPage() {
 
           {canApprove ? (
             <>
-              <div className="mb-3">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Enter 4-digit approval PIN</label>
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                <label className="block text-xs font-semibold text-gray-700 mb-2">4-digit approval PIN</label>
                 <input
                   type="password"
                   inputMode="numeric"
                   maxLength={4}
                   value={pin}
                   onChange={e => setPin(e.target.value)}
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="••••"
+                  className="w-36 px-4 py-3 border border-gray-300 rounded-lg text-xl text-center tracking-[0.4em] font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                  placeholder="····"
+                  autoFocus
                 />
-                <p className="text-xs text-gray-400 mt-1">PIN is validated server-side as part of the approval transaction</p>
+                <p className="text-xs text-gray-400 mt-2">PIN is validated server-side — this approval is your digital signature.</p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleApprove}
-                  disabled={loading || pin.length !== 4}
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg"
-                >
-                  {loading ? "Verifying PIN…" : "Approve & dispatch"}
-                </button>
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Reject with reason</label>
+              <button
+                onClick={handleApprove}
+                disabled={loading || pin.length !== 4}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+              >
+                {loading ? "Verifying PIN…" : "Approve & dispatch to PSP"}
+              </button>
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Reject with reason</label>
                 <textarea
                   value={rejectReason}
                   onChange={e => setRejectReason(e.target.value)}
@@ -290,7 +289,7 @@ export default function PaymentDetailPage() {
                 <button
                   onClick={handleReject}
                   disabled={loading || rejectReason.trim().length < 10}
-                  className="mt-2 px-4 py-2 border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-40 text-xs font-medium rounded-lg"
+                  className="mt-2 px-4 py-2 border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium rounded-lg transition-colors"
                 >
                   Reject payment
                 </button>

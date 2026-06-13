@@ -44,10 +44,10 @@ export default async function DashboardPage() {
   });
 
   const stats = [
-    { label: "Total Payments", value: payments, link: "/payments", color: "text-gray-900" },
-    { label: "Approved Vendors", value: vendors, link: "/vendors", color: "text-emerald-700" },
-    { label: "Compliance Queue", value: complianceQueue, link: "/compliance", color: "text-orange-700" },
-    { label: "Exception Queue", value: exceptions, link: "/exceptions", color: "text-red-700" },
+    { label: "Total Payments", value: payments, link: "/payments", urgent: false },
+    { label: "Approved Vendors", value: vendors, link: "/vendors", urgent: false },
+    { label: "Compliance Queue", value: complianceQueue, link: "/compliance", urgent: complianceQueue > 0 },
+    { label: "Exception Queue", value: exceptions, link: "/exceptions", urgent: exceptions > 0 },
   ];
 
   return (
@@ -62,9 +62,18 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-4 gap-4 mb-8">
         {stats.map((s) => (
           <Link key={s.label} href={s.link}>
-            <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-shadow">
-              <p className="text-xs text-gray-500 mb-1">{s.label}</p>
-              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <div className={`bg-white rounded-xl p-4 hover:shadow-sm transition-all border ${
+              s.urgent ? "border-red-200 ring-1 ring-red-100" : "border-gray-200"
+            }`}>
+              <p className="text-xs text-gray-500 mb-2">{s.label}</p>
+              <div className="flex items-end justify-between">
+                <p className={`text-2xl font-bold tabular-nums ${
+                  s.urgent ? "text-red-700" : "text-gray-900"
+                }`}>{s.value}</p>
+                {s.urgent && s.value > 0 && (
+                  <span className="text-xs font-medium text-red-600 mb-0.5">Needs action</span>
+                )}
+              </div>
             </div>
           </Link>
         ))}
@@ -73,16 +82,17 @@ export default async function DashboardPage() {
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900">Recent Payments</h2>
-          <Link href="/payments/new" className="text-xs font-medium text-emerald-600 hover:underline">
+          <Link href="/payments/new" className="text-xs font-medium text-emerald-600 hover:text-emerald-700">
             + New payment
           </Link>
         </div>
 
         {recent.length === 0 ? (
-          <div className="px-5 py-12 text-center text-sm text-gray-400">
-            No payments yet.{" "}
-            <Link href="/payments/new" className="text-emerald-600 hover:underline">
-              Create your first payment request.
+          <div className="px-5 py-14 text-center">
+            <p className="text-sm text-gray-500 font-medium mb-1">No payments yet</p>
+            <p className="text-xs text-gray-400 mb-4">You&apos;ll need at least one approved vendor before you can submit a payment request.</p>
+            <Link href="/vendors/new" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors">
+              Add first vendor
             </Link>
           </div>
         ) : (

@@ -33,9 +33,15 @@ export default async function CompliancePage() {
       </div>
 
       {queue.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl px-5 py-12 text-center">
-          <p className="text-sm text-gray-400">No payments in compliance review. ✓</p>
-          <p className="text-xs text-gray-300 mt-1">Create a payment ≥ ₦5,000,000 to trigger the HIGH_VALUE gate.</p>
+        <div className="bg-white border border-gray-200 rounded-xl px-5 py-14 text-center">
+          <div className="inline-flex items-center justify-center w-10 h-10 bg-emerald-50 rounded-full mb-3">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-emerald-600">
+              <path d="M10 2L3 5v5c0 3.5 3 6.5 7 7.5 4-1 7-4 7-7.5V5L10 2z" />
+              <path d="M7 10l2 2 4-4" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-gray-700">Compliance queue is clear</p>
+          <p className="text-xs text-gray-400 mt-1">Payments ≥ ₦5M, duplicate invoices, or ambiguous KYB matches appear here for review before reaching a Checker.</p>
         </div>
       ) : (
         <div className="space-y-3">
