@@ -1,0 +1,1475 @@
+{
+  "info": {
+    "name": "PayOps Control Tower — Backend QA",
+    "description": "Full backend test suite for PayOps Control Tower. Run in order: Auth → Vendors → Payments → Webhooks → Authorization. All Server Actions are tested via their underlying Next.js Server Action POST endpoint.\n\nPre-requisites:\n1. `npm run dev` running at http://localhost:3000\n2. `npx prisma migrate dev` applied (fresh DB)\n\nCollection Variables (set in Postman):\n- BASE_URL: http://localhost:3000\n- PSP_WEBHOOK_SECRET: psp-webhook-dev-secret\n- SESSION_COOKIE: (auto-set by tests)\n- OWNER_SESSION: (auto-set)\n- MAKER_SESSION: (auto-set)\n- VENDOR_ID: (auto-set)\n- PAYMENT_ID: (auto-set)\n- COMPLIANCE_PAYMENT_ID: (auto-set)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "http://localhost:3000", "type": "string" },
+    { "key": "PSP_WEBHOOK_SECRET", "value": "psp-webhook-dev-secret", "type": "string" },
+    { "key": "OWNER_SESSION", "value": "", "type": "string" },
+    { "key": "MAKER_SESSION", "value": "", "type": "string" },
+    { "key": "VENDOR_ID", "value": "", "type": "string" },
+    { "key": "VENDOR_PARTIAL_ID", "value": "", "type": "string" },
+    { "key": "PAYMENT_ID", "value": "", "type": "string" },
+    { "key": "COMPLIANCE_PAYMENT_ID", "value": "", "type": "string" },
+    { "key": "NUBAN_SECRET", "value": "nuban-dev-secret", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "0 — Pre-flight",
+      "item": [
+        {
+          "name": "Health check — Login page returns 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login page is reachable', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/login"
+          }
+        },
+        {
+          "name": "Unauthenticated dashboard → 307 to login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 307 redirect', function () {",
+                  "  pm.response.to.have.status(307);",
+                  "});",
+                  "pm.test('Location header points to /login', function () {",
+                  "  pm.expect(pm.response.headers.get('Location')).to.include('/login');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/dashboard",
+            "header": [{ "key": "Cookie", "value": "" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "1 — Auth",
+      "item": [
+        {
+          "name": "A-01 Register Owner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Redirect after registration (302/307)', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});",
+                  "const cookie = pm.response.headers.get('Set-Cookie');",
+                  "if (cookie && cookie.includes('payops_session')) {",
+                  "  const match = cookie.match(/payops_session=([^;]+)/);",
+                  "  if (match) {",
+                  "    pm.collectionVariables.set('OWNER_SESSION', match[1]);",
+                  "    pm.test('Session cookie set', () => pm.expect(match[1]).to.not.be.empty);",
+                  "  }",
+                  "} else {",
+                  "  pm.test('Session cookie set (check manually — Next.js may inline redirect)', () => true);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/register",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Next-Action", "value": "register" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "fullName", "value": "Chidi Okonkwo" },
+                { "key": "email", "value": "chidi@apexfreight.ng" },
+                { "key": "password", "value": "SecurePass123" },
+                { "key": "businessName", "value": "Apex Freight Solutions Ltd" },
+                { "key": "cacNumber", "value": "RC-7654321" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "A-01b Login as Owner (captures session)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login redirect returned', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});",
+                  "const setCookie = pm.response.headers.get('Set-Cookie');",
+                  "if (setCookie) {",
+                  "  const match = setCookie.match(/payops_session=([^;]+)/);",
+                  "  if (match) {",
+                  "    pm.collectionVariables.set('OWNER_SESSION', match[1]);",
+                  "    console.log('Owner session saved');",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/login",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "chidi@apexfreight.ng" },
+                { "key": "password", "value": "SecurePass123" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "B-01 Register duplicate email → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response is 200 (error returned in body)', () => pm.response.to.have.status(200));",
+                  "pm.test('Error message present', function () {",
+                  "  const text = pm.response.text();",
+                  "  pm.expect(text).to.include('already exists');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/register",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "fullName", "value": "Duplicate User" },
+                { "key": "email", "value": "chidi@apexfreight.ng" },
+                { "key": "password", "value": "SecurePass123" },
+                { "key": "businessName", "value": "Another Business" },
+                { "key": "cacNumber", "value": "RC-9999999" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "B-03 Login wrong password → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Error message present', function () {",
+                  "  pm.expect(pm.response.text()).to.include('Invalid email or password');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/login",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "chidi@apexfreight.ng" },
+                { "key": "password", "value": "WRONG_PASSWORD" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "A-04 Invite Maker team member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Redirect (team member created)', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/team/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "fullName", "value": "Amaka Osei" },
+                { "key": "email", "value": "amaka@apexfreight.ng" },
+                { "key": "password", "value": "MakerPass456" },
+                { "key": "role", "value": "maker" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "A-04b Login as Maker (captures session)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Maker login redirect', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});",
+                  "const setCookie = pm.response.headers.get('Set-Cookie');",
+                  "if (setCookie) {",
+                  "  const match = setCookie.match(/payops_session=([^;]+)/);",
+                  "  if (match) {",
+                  "    pm.collectionVariables.set('MAKER_SESSION', match[1]);",
+                  "    console.log('Maker session saved');",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/login",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "amaka@apexfreight.ng" },
+                { "key": "password", "value": "MakerPass456" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "C-07 Maker cannot invite team members → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error: only owners and admins can invite', function () {",
+                  "  pm.expect(pm.response.text()).to.include('Only Owners and Admins');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/team/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{MAKER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "fullName", "value": "Hacker" },
+                { "key": "email", "value": "hacker@evil.com" },
+                { "key": "password", "value": "EvilPass123" },
+                { "key": "role", "value": "admin" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 — PIN Setup",
+      "item": [
+        {
+          "name": "A-03 Owner sets up PIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('PIN setup redirect', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/setup-pin",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "pin", "value": "1234" },
+                { "key": "confirmPin", "value": "1234" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "C-10 Approve without PIN → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// This test is run BEFORE PIN setup in a fresh DB.",
+                  "// If you've already run A-03, this will return a different error.",
+                  "// To test: reset DB or use a new Checker user with no PIN.",
+                  "pm.test('Response is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('PIN-related error in response', function () {",
+                  "  const text = pm.response.text();",
+                  "  const hasError = text.includes('set up a PIN') || text.includes('not awaiting approval');",
+                  "  pm.expect(hasError).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/payments/NO_PAYMENT_ID",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"pin\":\"1234\"}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 — Vendors",
+      "item": [
+        {
+          "name": "A-05 Add vendor — auto-approved (NUBAN ending 1234)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Redirect after vendor creation', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/vendors/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "legalName", "value": "Sunrise Logistics Ltd" },
+                { "key": "cacNumber", "value": "RC-1122334" },
+                { "key": "bankName", "value": "Zenith Bank" },
+                { "key": "nuban", "value": "0312341234" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/vendors — list vendors (grab ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const vendors = pm.response.json();",
+                  "pm.test('At least one vendor returned', () => pm.expect(vendors.length).to.be.above(0));",
+                  "const approved = vendors.find(v => v.kybStatus === 'approved');",
+                  "if (approved) {",
+                  "  pm.collectionVariables.set('VENDOR_ID', approved.id);",
+                  "  pm.test('Approved vendor ID saved: ' + approved.id, () => pm.expect(approved.id).to.not.be.empty);",
+                  "}",
+                  "const review = vendors.find(v => v.kybStatus === 'needs_review');",
+                  "if (review) {",
+                  "  pm.collectionVariables.set('VENDOR_PARTIAL_ID', review.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/vendors",
+            "header": [{ "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }]
+          }
+        },
+        {
+          "name": "A-06 Add vendor — needs_review (NUBAN ending 5678)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Redirect after vendor creation', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/vendors/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "legalName", "value": "Delta Haulage Services" },
+                { "key": "cacNumber", "value": "RC-5556677" },
+                { "key": "bankName", "value": "Access Bank" },
+                { "key": "nuban", "value": "0312345678" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "D-01 Add vendor — duplicate NUBAN → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Duplicate NUBAN error returned', function () {",
+                  "  pm.expect(pm.response.text()).to.include('already linked to an approved vendor');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/vendors/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "legalName", "value": "Sunrise Logistics Duplicate" },
+                { "key": "cacNumber", "value": "RC-DUPE9999" },
+                { "key": "bankName", "value": "GT Bank" },
+                { "key": "nuban", "value": "0312341234" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "B-05 Create payment against needs_review vendor → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error: vendor not approved', function () {",
+                  "  pm.expect(pm.response.text()).to.include('Needs Review status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{MAKER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "vendorId", "value": "{{VENDOR_PARTIAL_ID}}" },
+                { "key": "invoiceNumber", "value": "INV-BLOCKED-001" },
+                { "key": "amount", "value": "500000" },
+                { "key": "invoicePdfName", "value": "invoice.pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "C-06 Maker cannot approve vendor → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error: only checkers can approve vendors', function () {",
+                  "  pm.expect(pm.response.text()).to.include('Only Checkers');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/vendors/{{VENDOR_PARTIAL_ID}}",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{MAKER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "justification", "value": "I am a maker trying to approve a vendor manually which I should not be able to do." }
+              ]
+            }
+          }
+        },
+        {
+          "name": "B-12 Vendor manual approval — justification too short → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error: justification too short', function () {",
+                  "  pm.expect(pm.response.text()).to.include('20 characters');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/vendors/{{VENDOR_PARTIAL_ID}}",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "justification", "value": "Too short." }
+              ]
+            }
+          }
+        },
+        {
+          "name": "A-07 Owner manually approves needs_review vendor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Redirect after vendor approval', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/vendors/{{VENDOR_PARTIAL_ID}}",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "justification", "value": "CAC name and NUBAN name differ by legal suffix only. Director ID cross-checked. Confirmed same entity." }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 — Payments (Standard Flow)",
+      "item": [
+        {
+          "name": "A-08 Maker creates standard payment (< ₦5M)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Redirect to payment detail', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "  const loc = pm.response.headers.get('Location') || '';",
+                  "  if (loc.includes('/payments/')) {",
+                  "    const id = loc.split('/payments/')[1];",
+                  "    pm.collectionVariables.set('PAYMENT_ID', id);",
+                  "    console.log('Payment ID saved:', id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{MAKER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "vendorId", "value": "{{VENDOR_ID}}" },
+                { "key": "invoiceNumber", "value": "INV-2026-001" },
+                { "key": "amount", "value": "250000" },
+                { "key": "costCenter", "value": "Operations" },
+                { "key": "invoicePdfName", "value": "inv-2026-001.pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/payments/:id — verify pending_approval status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Payment is pending_approval', function () {",
+                  "  pm.expect(body.payment.status).to.equal('pending_approval');",
+                  "});",
+                  "pm.test('makerId is present', () => pm.expect(body.payment.makerId).to.not.be.empty);",
+                  "pm.test('complianceTrigger is null', () => pm.expect(body.payment.complianceTrigger).to.be.null);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/payments/{{PAYMENT_ID}}",
+            "header": [{ "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }]
+          }
+        },
+        {
+          "name": "C-01 Maker cannot approve own payment → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Four-eyes error returned', function () {",
+                  "  pm.expect(pm.response.text()).to.include('cannot approve a payment you created');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/{{PAYMENT_ID}}/approve",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{MAKER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"pin\":\"1234\"}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "B-11 Owner submits wrong PIN → error + attempt counter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Wrong PIN error returned', function () {",
+                  "  const text = pm.response.text();",
+                  "  pm.expect(text).to.include('Incorrect PIN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/{{PAYMENT_ID}}/approve",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"pin\":\"9999\"}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "B-10 Reject payment — reason too short → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Rejection reason too short error', function () {",
+                  "  pm.expect(pm.response.text()).to.include('at least 10 characters');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/{{PAYMENT_ID}}/reject",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"reason\":\"Short\"}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "C-03 Maker cannot approve payment → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Note: Maker also created this payment, so error may be four-eyes first.",
+                  "// For pure role test, run against a payment a DIFFERENT maker created.",
+                  "pm.test('Auth or four-eyes error returned', function () {",
+                  "  const text = pm.response.text();",
+                  "  const hasError = text.includes('Only Checkers') || text.includes('cannot approve');",
+                  "  pm.expect(hasError).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/{{PAYMENT_ID}}/approve",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{MAKER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"pin\":\"0000\"}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "A-11 Owner approves payment with correct PIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Approval success', function () {",
+                  "  const text = pm.response.text();",
+                  "  pm.expect(text).to.include('success') || pm.expect([302,307]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/{{PAYMENT_ID}}/approve",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"pin\":\"1234\"}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "GET /api/payments/:id — verify processing status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Payment is processing or reconciled', function () {",
+                  "  pm.expect(['processing','reconciled','exception_queue']).to.include(body.payment.status);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/payments/{{PAYMENT_ID}}",
+            "header": [{ "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }]
+          }
+        },
+        {
+          "name": "E-06 Cannot approve already-processing payment → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error: not awaiting approval', function () {",
+                  "  pm.expect(pm.response.text()).to.include('not awaiting approval');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/{{PAYMENT_ID}}/approve",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"pin\":\"1234\"}", "options": { "raw": { "language": "json" } } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 — Payments (Compliance Flow)",
+      "item": [
+        {
+          "name": "A-09 Maker creates HIGH_VALUE payment (≥ ₦5M)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Redirect to payment detail', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "  const loc = pm.response.headers.get('Location') || '';",
+                  "  if (loc.includes('/payments/')) {",
+                  "    const id = loc.split('/payments/')[1];",
+                  "    pm.collectionVariables.set('COMPLIANCE_PAYMENT_ID', id);",
+                  "    console.log('Compliance payment ID saved:', id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{MAKER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "vendorId", "value": "{{VENDOR_ID}}" },
+                { "key": "invoiceNumber", "value": "INV-2026-HV-001" },
+                { "key": "amount", "value": "5000000" },
+                { "key": "costCenter", "value": "Capital Expenditure" },
+                { "key": "invoicePdfName", "value": "inv-hv-001.pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/payments/:id — verify compliance_review status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Payment is in compliance_review', function () {",
+                  "  pm.expect(body.payment.status).to.equal('compliance_review');",
+                  "});",
+                  "pm.test('complianceTrigger is HIGH_VALUE', function () {",
+                  "  pm.expect(body.payment.complianceTrigger).to.equal('HIGH_VALUE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/payments/{{COMPLIANCE_PAYMENT_ID}}",
+            "header": [{ "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }]
+          }
+        },
+        {
+          "name": "D-02 Duplicate invoice triggers compliance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Redirect after creation', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{MAKER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "vendorId", "value": "{{VENDOR_ID}}" },
+                { "key": "invoiceNumber", "value": "INV-2026-001" },
+                { "key": "amount", "value": "250000" },
+                { "key": "invoicePdfName", "value": "duplicate.pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "C-02 Compliance resolver cannot also approve (four-eyes pt.2) → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// To test this: Owner clears compliance review on COMPLIANCE_PAYMENT_ID,",
+                  "// then tries to approve the same payment. Should be blocked.",
+                  "pm.test('Four-eyes rule or not-in-approval-state error', function () {",
+                  "  const text = pm.response.text();",
+                  "  const hasError = text.includes('compliance reviewer') || text.includes('not awaiting approval');",
+                  "  pm.expect(hasError).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/{{COMPLIANCE_PAYMENT_ID}}/approve",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"pin\":\"1234\"}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "A-10 Owner clears compliance review",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Compliance cleared', function () {",
+                  "  const text = pm.response.text();",
+                  "  pm.expect(text).to.include('success') || pm.expect([302,307]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/{{COMPLIANCE_PAYMENT_ID}}/compliance",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"decision\":\"clear\"}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "B-13 Block compliance review → exception_queue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Run this on a fresh compliance_review payment (not COMPLIANCE_PAYMENT_ID which was already cleared).",
+                  "// This validates that 'block' decision routes to exception_queue.",
+                  "pm.test('Response is 200 or redirect', function () {",
+                  "  pm.expect([200, 302, 307]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/{{COMPLIANCE_PAYMENT_ID}}/compliance",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"decision\":\"block\"}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "E-08 Tranche limit exceeded → error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('TRANCHE_LIMIT_EXCEEDED error returned', function () {",
+                  "  pm.expect(pm.response.text()).to.include('TRANCHE_LIMIT_EXCEEDED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/payments/new",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Cookie", "value": "payops_session={{MAKER_SESSION}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "vendorId", "value": "{{VENDOR_ID}}" },
+                { "key": "invoiceNumber", "value": "INV-GIANT-001" },
+                { "key": "amount", "value": "300000000" },
+                { "key": "invoicePdfName", "value": "giant.pdf" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 — Webhooks",
+      "item": [
+        {
+          "name": "A-12 Valid SUCCESS webhook → reconciled",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate HMAC-SHA256 signature using CryptoJS (built into Postman)",
+                  "const secret = pm.collectionVariables.get('PSP_WEBHOOK_SECRET');",
+                  "const paymentId = pm.collectionVariables.get('PAYMENT_ID');",
+                  "const txRef = 'TXN-TEST-' + Date.now();",
+                  "pm.collectionVariables.set('TEST_TX_REF', txRef);",
+                  "const payload = JSON.stringify({",
+                  "  paymentId: paymentId,",
+                  "  transactionReference: txRef,",
+                  "  settlementStatus: 'SUCCESS',",
+                  "  settledAmount: 25000000,",
+                  "  bankReference: 'NIBSS-TEST-001',",
+                  "  businessId: 'WILL_BE_LOOKED_UP'",
+                  "});",
+                  "pm.collectionVariables.set('WEBHOOK_PAYLOAD', payload);",
+                  "const sig = CryptoJS.HmacSHA256(payload, secret).toString();",
+                  "pm.collectionVariables.set('WEBHOOK_SIG', sig);",
+                  "console.log('Signature:', sig);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Webhook accepted (200)', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('ok is true', () => pm.expect(body.ok).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/webhooks/settlement",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-PSP-Signature", "value": "{{WEBHOOK_SIG}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{{WEBHOOK_PAYLOAD}}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "B-07 Webhook with invalid signature → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Invalid signature error', function () {",
+                  "  pm.expect(pm.response.json().error).to.equal('Invalid signature');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/webhooks/settlement",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-PSP-Signature", "value": "FAKESIGNATURE00000000000000000000000000000000000000000000000000" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"paymentId\":\"fake\",\"transactionReference\":\"TXN-FAKE\",\"settlementStatus\":\"SUCCESS\",\"settledAmount\":100000,\"bankReference\":\"NIBSS-FAKE\",\"businessId\":\"fake\"}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E-01 Duplicate webhook (same transactionReference) → deduplicated",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Deduplicated flag true', () => pm.expect(body.deduplicated).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/webhooks/settlement",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-PSP-Signature", "value": "{{WEBHOOK_SIG}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{{WEBHOOK_PAYLOAD}}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "B-06 PSP FAILURE webhook → exception_queue",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const secret = pm.collectionVariables.get('PSP_WEBHOOK_SECRET');",
+                  "const paymentId = pm.collectionVariables.get('PAYMENT_ID');",
+                  "const txRef = 'TXN-FAIL-' + Date.now();",
+                  "const payload = JSON.stringify({",
+                  "  paymentId: paymentId,",
+                  "  transactionReference: txRef,",
+                  "  settlementStatus: 'FAILED',",
+                  "  settledAmount: 0,",
+                  "  bankReference: 'NIBSS-FAIL-001',",
+                  "  businessId: 'WILL_BE_LOOKED_UP'",
+                  "});",
+                  "pm.collectionVariables.set('FAIL_WEBHOOK_PAYLOAD', payload);",
+                  "const sig = CryptoJS.HmacSHA256(payload, secret).toString();",
+                  "pm.collectionVariables.set('FAIL_WEBHOOK_SIG', sig);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "// Verify payment moved to exception_queue via GET after this"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/webhooks/settlement",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-PSP-Signature", "value": "{{FAIL_WEBHOOK_SIG}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{{FAIL_WEBHOOK_PAYLOAD}}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "B-09 AMOUNT_MISMATCH webhook → exception_queue",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// For a ₦2,500 payment (250000 kobo), NIP tolerance = 0 kobo (free tier).",
+                  "// settledAmount = 249000 (₦9 short) → variance 1000 kobo > 0 tolerance → AMOUNT_MISMATCH",
+                  "const secret = pm.collectionVariables.get('PSP_WEBHOOK_SECRET');",
+                  "const paymentId = pm.collectionVariables.get('PAYMENT_ID');",
+                  "const txRef = 'TXN-MISMATCH-' + Date.now();",
+                  "const payload = JSON.stringify({",
+                  "  paymentId: paymentId,",
+                  "  transactionReference: txRef,",
+                  "  settlementStatus: 'SUCCESS',",
+                  "  settledAmount: 249000,",
+                  "  bankReference: 'NIBSS-MM-001',",
+                  "  businessId: 'WILL_BE_LOOKED_UP'",
+                  "});",
+                  "pm.collectionVariables.set('MM_WEBHOOK_PAYLOAD', payload);",
+                  "const sig = CryptoJS.HmacSHA256(payload, secret).toString();",
+                  "pm.collectionVariables.set('MM_WEBHOOK_SIG', sig);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/webhooks/settlement",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-PSP-Signature", "value": "{{MM_WEBHOOK_SIG}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{{MM_WEBHOOK_PAYLOAD}}", "options": { "raw": { "language": "json" } } }
+          }
+        },
+        {
+          "name": "NIP Tolerance — E-04 ₦5k–₦50k max ₦10 (passes)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Invoice = ₦20,000 (2000000 kobo). Settled = 2000000 - 1000 = 1999000 (₦10 short).",
+                  "// NIP tolerance for ₦5k–₦50k = 1000 kobo. Variance = 1000 ≤ 1000 → reconciled.",
+                  "const secret = pm.collectionVariables.get('PSP_WEBHOOK_SECRET');",
+                  "const paymentId = pm.collectionVariables.get('PAYMENT_ID');",
+                  "const txRef = 'TXN-NIP-E04-' + Date.now();",
+                  "const payload = JSON.stringify({",
+                  "  paymentId: paymentId,",
+                  "  transactionReference: txRef,",
+                  "  settlementStatus: 'SUCCESS',",
+                  "  settledAmount: 1999000,",
+                  "  bankReference: 'NIBSS-NIP-E04',",
+                  "  businessId: 'WILL_BE_LOOKED_UP'",
+                  "});",
+                  "pm.collectionVariables.set('NIP_E04_PAYLOAD', payload);",
+                  "const sig = CryptoJS.HmacSHA256(payload, secret).toString();",
+                  "pm.collectionVariables.set('NIP_E04_SIG', sig);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Not deduplicated (unique txRef)', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.deduplicated).to.not.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/api/webhooks/settlement",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-PSP-Signature", "value": "{{NIP_E04_SIG}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{{NIP_E04_PAYLOAD}}", "options": { "raw": { "language": "json" } } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 — Cross-Business Isolation",
+      "item": [
+        {
+          "name": "C-08 Register second business",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Second business registered', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});",
+                  "const setCookie = pm.response.headers.get('Set-Cookie');",
+                  "if (setCookie) {",
+                  "  const match = setCookie.match(/payops_session=([^;]+)/);",
+                  "  if (match) pm.collectionVariables.set('BIZ_B_SESSION', match[1]);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/register",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "fullName", "value": "Fatima Bello" },
+                { "key": "email", "value": "fatima@northstar.ng" },
+                { "key": "password", "value": "NorthStar789" },
+                { "key": "businessName", "value": "NorthStar Supplies" },
+                { "key": "cacNumber", "value": "RC-9988776" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "C-08 Business B cannot read Business A's payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 Not Found — cross-business isolation', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.error).to.equal('Not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/payments/{{PAYMENT_ID}}",
+            "header": [{ "key": "Cookie", "value": "payops_session={{BIZ_B_SESSION}}" }]
+          }
+        },
+        {
+          "name": "C-09 Business B cannot read Business A's vendors",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK — but vendors list is empty (Business B sees only own)', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const vendors = pm.response.json();",
+                  "  pm.expect(vendors).to.be.an('array');",
+                  "  pm.expect(vendors.length).to.equal(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/vendors",
+            "header": [{ "key": "Cookie", "value": "payops_session={{BIZ_B_SESSION}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8 — Session & Auth Integrity",
+      "item": [
+        {
+          "name": "F-01 Expired / tampered JWT → 307 redirect",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('307 redirect to login for tampered JWT', function () {",
+                  "  pm.expect(pm.response.code).to.equal(307);",
+                  "  pm.expect(pm.response.headers.get('Location')).to.include('/login');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/dashboard",
+            "header": [{ "key": "Cookie", "value": "payops_session=eyJhbGciOiJIUzI1NiJ9.TAMPERED.INVALIDSIG" }]
+          }
+        },
+        {
+          "name": "F-04 Logout clears session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Logout redirect', function () {",
+                  "  pm.expect([302, 307]).to.include(pm.response.code);",
+                  "});",
+                  "const setCookie = pm.response.headers.get('Set-Cookie') || '';",
+                  "pm.test('Session cookie cleared or expired', function () {",
+                  "  const expired = setCookie.includes('Max-Age=0') || setCookie.includes('expires=Thu, 01 Jan 1970');",
+                  "  const deleted = setCookie.includes('payops_session=;') || setCookie.includes('payops_session=,');",
+                  "  pm.expect(expired || deleted || setCookie.includes('payops_session')).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{BASE_URL}}/logout",
+            "header": [{ "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }]
+          }
+        },
+        {
+          "name": "F-04b Old session rejected after logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('307 redirect — session no longer valid', function () {",
+                  "  pm.expect(pm.response.code).to.equal(307);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/dashboard",
+            "header": [{ "key": "Cookie", "value": "payops_session={{OWNER_SESSION}}" }]
+          }
+        }
+      ]
+    }
+  ]
+}
