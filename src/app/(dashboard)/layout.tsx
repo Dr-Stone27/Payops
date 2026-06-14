@@ -49,9 +49,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div style={{ padding: "0 12px 10px" }}>
           <Link
             href="/payments/new"
-            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, height: 38, borderRadius: 9, background: "#0e7a5a", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none", boxShadow: "0 1px 2px rgba(14,122,90,.3)" }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#0c6a4e")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "#0e7a5a")}
+            className="wt-sidebar-cta"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             New payment
