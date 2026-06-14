@@ -1,30 +1,59 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-hanken);
+  --font-mono: var(--font-jetbrains);
+  --color-ink: #0c1d2e;
+  --color-ink-2: #6b7785;
+  --color-ink-3: #8a97a6;
+  --color-ink-4: #9aa6b2;
+  --color-wt: #0e7a5a;
+  --color-wt-hover: #0c6a4e;
+  --color-wt-light: #ecf6f1;
+  --color-wt-bg: #f5f6f8;
+  --color-wt-surface: #ffffff;
+  --color-wt-border: #e8eaed;
+  --color-wt-border-2: #f1f3f5;
+  --color-wt-border-3: #eef0f3;
+  --color-wt-input: #dce1e6;
+  --color-wt-row: rgba(12,29,46,.025);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #f5f6f8;
+  color: #0c1d2e;
   font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
 }
 
 h1, h2, h3 {
   text-wrap: balance;
 }
+
+.font-mono, code, [data-mono] {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+/* Watchtower custom scrollbar */
+.wt-scroll::-webkit-scrollbar { width: 10px; }
+.wt-scroll::-webkit-scrollbar-thumb {
+  background: #dde2e7;
+  border-radius: 8px;
+  border: 3px solid #fff;
+}
+
+/* Focus ring */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #0e7a5a !important;
+  box-shadow: 0 0 0 3px rgba(14,122,90,.13);
+}
+
+/* Processing spin */
+@keyframes wt-spin { to { transform: rotate(360deg); } }
+.wt-spin { animation: wt-spin .9s linear infinite; }
+
+/* PIN box fill animation */
+@keyframes wt-pop { 0% { transform: scale(.92); } 100% { transform: scale(1); } }
+.wt-pop { animation: wt-pop .12s ease-out; }

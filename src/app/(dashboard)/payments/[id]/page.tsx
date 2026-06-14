@@ -1,65 +1,77 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { approvePayment, rejectPayment, clearComplianceReview } from "@/actions/payments";
+import { STATUS_BADGE, avatarColor, getInitials } from "@/lib/design";
 
 interface Payment {
-  id: string;
-  invoiceNumber: string;
-  amount: number;
-  costCenter: string | null;
-  invoicePdfName: string | null;
-  status: string;
-  exceptionCategory: string | null;
-  complianceTrigger: string | null;
-  rejectionReason: string | null;
-  transactionReference: string | null;
-  settledAmount: number | null;
-  createdAt: string;
-  makerId: string;
-  complianceReviewResolvedBy: string | null;
+  id: string; invoiceNumber: string; amount: number; costCenter: string | null;
+  invoicePdfName: string | null; status: string; exceptionCategory: string | null;
+  complianceTrigger: string | null; rejectionReason: string | null;
+  transactionReference: string | null; settledAmount: number | null;
+  createdAt: string; makerId: string; complianceReviewResolvedBy: string | null;
   vendor: { legalName: string; bankName: string; nubanLast4: string; kybStatus: string };
   maker: { fullName: string };
 }
-
-const STATUS_LABEL: Record<string, string> = {
-  pending_approval: "Pending Approval",
-  compliance_review: "Compliance Review",
-  processing: "Processing",
-  settled: "Settled",
-  reconciled: "Reconciled ✓",
-  exception_queue: "Exception Queue",
-  cancelled: "Cancelled",
-};
-
-const STATUS_COLOR: Record<string, string> = {
-  pending_approval: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  compliance_review: "bg-orange-100 text-orange-800 border-orange-200",
-  processing: "bg-blue-100 text-blue-800 border-blue-200",
-  settled: "bg-cyan-100 text-cyan-800 border-cyan-200",
-  reconciled: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  exception_queue: "bg-red-100 text-red-800 border-red-200",
-  cancelled: "bg-gray-100 text-gray-500 border-gray-200",
-};
 
 function formatNaira(kobo: number) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(kobo / 100);
 }
 
+const TRIGGER_LABELS: Record<string, string> = {
+  HIGH_VALUE: "High-value payment (≥ ₦5,000,000)",
+  DUPLICATE_INVOICE: "Duplicate invoice number detected",
+  BENEFICIARY_CHANGE: "Vendor bank details changed recently",
+  REPEATED_FAILURE: "Repeated PSP failures for this vendor",
+  AMBIGUOUS_MATCH: "Vendor KYB match score was marginal (0.70–0.84)",
+};
+
+function FactRow({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderBottom: "1px solid #f1f3f5" }}>
+      <div style={{ fontSize: 12, color: "#8a97a6", width: 140, flexShrink: 0, paddingTop: 1 }}>{label}</div>
+      <div style={{ fontSize: 13, color: "#0c1d2e", fontWeight: 500, fontFamily: mono ? "var(--font-mono)" : undefined }}>{value}</div>
+    </div>
+  );
+}
+
+function SegmentedPIN({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const hiddenRef = useRef<HTMLInputElement>(null);
+  const digits = value.padEnd(4, "").slice(0, 4).split("");
+
+  return (
+    <div style={{ position: "relative", display: "inline-flex", gap: 10 }} onClick={() => hiddenRef.current?.focus()}>
+      <input ref={hiddenRef} type="password" inputMode="numeric" maxLength={4} value={value}
+        onChange={e => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
+        style={{ position: "absolute", opacity: 0, width: 1, height: 1, pointerEvents: "none" }}
+        autoFocus />
+      {digits.map((d, i) => (
+        <div key={i} style={{
+          width: 52, height: 60, border: `2px solid ${value.length === i ? "#0e7a5a" : d ? "#0c1d2e" : "#dce1e6"}`,
+          borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 24, fontWeight: 700, fontFamily: "var(--font-mono)", color: "#0c1d2e",
+          cursor: "text", background: "#fff",
+          boxShadow: value.length === i ? "0 0 0 3px rgba(14,122,90,.13)" : "none",
+          transition: "border-color .1s, box-shadow .1s",
+        }}>
+          {d ? "•" : ""}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function PaymentDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const [payment, setPayment] = useState<Payment | null>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [sessionRole, setSessionRole] = useState<string | null>(null);
-
   const [pin, setPin] = useState("");
   const [rejectReason, setRejectReason] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [polling, setPolling] = useState(false);
 
   const load = useCallback(() => {
     fetch(`/api/payments/${id}`).then(r => r.json()).then(d => {
@@ -71,12 +83,10 @@ export default function PaymentDetailPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Poll while processing
   useEffect(() => {
     if (payment?.status === "processing") {
-      setPolling(true);
       const interval = setInterval(load, 2000);
-      return () => { clearInterval(interval); setPolling(false); };
+      return () => clearInterval(interval);
     }
   }, [payment?.status, load]);
 
@@ -101,213 +111,182 @@ export default function PaymentDetailPage() {
     else { load(); setLoading(false); }
   }
 
-  if (!payment) return <div className="p-6 text-sm text-gray-400">Loading…</div>;
+  if (!payment) return (
+    <div style={{ padding: 36, display: "flex", alignItems: "center", gap: 10, color: "#8a97a6", fontSize: 13 }}>
+      <span className="wt-spin" style={{ display: "inline-block", width: 16, height: 16, border: "2px solid #dce1e6", borderTopColor: "#0e7a5a", borderRadius: "50%" }} />
+      Loading…
+    </div>
+  );
 
   const isChecker = sessionRole === "owner" || sessionRole === "admin";
   const isMaker = payment.makerId === sessionUserId;
   const isComplianceResolver = payment.complianceReviewResolvedBy === sessionUserId;
   const canApprove = isChecker && !isMaker && !isComplianceResolver && payment.status === "pending_approval";
 
-  const triggerLabels: Record<string, string> = {
-    HIGH_VALUE: "High-value payment (≥ ₦5,000,000)",
-    DUPLICATE_INVOICE: "Duplicate invoice number detected",
-    BENEFICIARY_CHANGE: "Vendor bank details changed recently",
-    REPEATED_FAILURE: "Repeated PSP failures for this vendor",
-    AMBIGUOUS_MATCH: "Vendor KYB match score was marginal (0.70–0.84)",
-  };
+  const badge = STATUS_BADGE[payment.status] ?? STATUS_BADGE.cancelled;
+  const vendorAv = avatarColor(payment.vendor.legalName);
+  const vendorIni = getInitials(payment.vendor.legalName);
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="mb-6">
-        <Link href="/payments" className="text-sm text-gray-500 hover:text-gray-700">← Back to payments</Link>
-        <div className="flex items-start justify-between mt-2">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">{payment.vendor.legalName}</h1>
-            <p className="text-sm text-gray-500">Invoice {payment.invoiceNumber} · Created by {payment.maker.fullName}</p>
+    <div style={{ padding: "30px 36px 80px", maxWidth: 680, margin: "0 auto" }}>
+      <div style={{ marginBottom: 24 }}>
+        <Link href="/payments" style={{ fontSize: 12.5, color: "#8a97a6", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 500 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Payments
+        </Link>
+
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginTop: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 11, background: vendorAv.bg, color: vendorAv.fg, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{vendorIni}</div>
+            <div>
+              <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, letterSpacing: "-.02em", color: "#0c1d2e" }}>{payment.vendor.legalName}</h1>
+              <p style={{ fontSize: 12.5, color: "#6b7785", margin: "3px 0 0", fontFamily: "var(--font-mono)" }}>
+                {payment.invoiceNumber} · {payment.maker.fullName}
+              </p>
+            </div>
           </div>
-          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${STATUS_COLOR[payment.status] ?? "bg-gray-100 text-gray-500 border-gray-200"}`}>
-            {STATUS_LABEL[payment.status] ?? payment.status}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, padding: "5px 12px 5px 10px", borderRadius: 999, background: badge.bg, color: badge.fg, marginTop: 4 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: badge.dot, flexShrink: 0 }} />
+            {badge.label}
           </span>
         </div>
       </div>
 
-      {/* Payment details */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-xs text-gray-400 mb-0.5">Amount</p>
-            <p className="text-2xl font-bold text-gray-900">{formatNaira(payment.amount)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400 mb-0.5">Vendor Account</p>
-            <p className="font-medium text-gray-900">{payment.vendor.bankName} ••••{payment.vendor.nubanLast4}</p>
-          </div>
-          {payment.costCenter && (
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Cost Center</p>
-              <p className="text-gray-700">{payment.costCenter}</p>
-            </div>
-          )}
-          {payment.invoicePdfName && (
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Invoice PDF</p>
-              <p className="text-xs font-mono bg-gray-50 px-2 py-1 rounded text-gray-600">{payment.invoicePdfName}</p>
-            </div>
-          )}
-          {payment.transactionReference && (
-            <div className="col-span-2">
-              <p className="text-xs text-gray-400 mb-0.5">Transaction Reference</p>
-              <p className="text-xs font-mono text-gray-600">{payment.transactionReference}</p>
-            </div>
-          )}
-          {payment.settledAmount != null && (
-            <div>
-              <p className="text-xs text-gray-400 mb-0.5">Settled Amount</p>
-              <p className={`font-medium ${payment.settledAmount === payment.amount ? "text-emerald-700" : "text-red-700"}`}>
-                {formatNaira(payment.settledAmount)}
-              </p>
-            </div>
-          )}
-        </div>
+      {/* Facts card */}
+      <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, padding: "6px 20px 4px", marginBottom: 14 }}>
+        <div style={{ fontSize: 27, fontWeight: 700, letterSpacing: "-.02em", color: "#0c1d2e", padding: "14px 0 10px", borderBottom: "1px solid #f1f3f5" }}>{formatNaira(payment.amount)}</div>
+        <FactRow label="Vendor account" value={`${payment.vendor.bankName} ••••${payment.vendor.nubanLast4}`} />
+        {payment.costCenter && <FactRow label="Cost center" value={payment.costCenter} />}
+        {payment.invoicePdfName && <FactRow label="Invoice PDF" value={payment.invoicePdfName} mono />}
+        {payment.transactionReference && <FactRow label="Transaction ref" value={payment.transactionReference} mono />}
+        {payment.settledAmount != null && (
+          <FactRow label="Settled amount" value={
+            <span style={{ color: payment.settledAmount === payment.amount ? "#0e7a5a" : "#dc4338" }}>
+              {formatNaira(payment.settledAmount)}
+            </span>
+          } />
+        )}
+        <FactRow label="Created" value={new Date(payment.createdAt).toLocaleString("en-NG", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })} />
       </div>
 
-      {/* Processing state — live polling */}
+      {/* Processing */}
       {payment.status === "processing" && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 flex items-center gap-3">
-          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+        <div style={{ background: "#e6f0fd", border: "1px solid #b5d0f8", borderRadius: 13, padding: "14px 18px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12 }}>
+          <span className="wt-spin" style={{ display: "inline-block", width: 18, height: 18, border: "2.5px solid rgba(29,93,164,.3)", borderTopColor: "#3b82f6", borderRadius: "50%", flexShrink: 0 }} />
           <div>
-            <p className="text-sm font-medium text-blue-900">Dispatched to PSP</p>
-            <p className="text-xs text-blue-700 mt-0.5">Awaiting settlement webhook… This page updates automatically.</p>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1d3d5c" }}>Dispatched to PSP</div>
+            <div style={{ fontSize: 12, color: "#3b6fa0", marginTop: 3 }}>Awaiting settlement webhook… This page updates automatically.</div>
           </div>
         </div>
       )}
 
-      {/* Reconciled state */}
+      {/* Reconciled */}
       {payment.status === "reconciled" && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4">
-          <p className="text-sm font-semibold text-emerald-900">✓ Reconciled</p>
-          <p className="text-xs text-emerald-700 mt-1">Settlement amount matched invoice within NIP charge tolerance. No manual action required.</p>
+        <div style={{ background: "#e6faf4", border: "1px solid #a8dfc9", borderRadius: 13, padding: "14px 18px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: "#0e7a5a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1a6b52" }}>Reconciled</div>
+            <div style={{ fontSize: 12, color: "#2a8a68", marginTop: 3 }}>Settlement matched invoice within NIP charge tolerance. No action required.</div>
+          </div>
         </div>
       )}
 
-      {/* Exception queue */}
+      {/* Exception */}
       {payment.status === "exception_queue" && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-          <p className="text-sm font-semibold text-red-900">⚠ Exception: {payment.exceptionCategory?.replace(/_/g, " ")}</p>
-          <p className="text-xs text-red-700 mt-1">
-            {payment.exceptionCategory === "PSP_FAILURE" && "The PSP returned a failure status. Retry from the Exception Queue or cancel this request."}
-            {payment.exceptionCategory === "AMOUNT_MISMATCH" && `Settled amount (${formatNaira(payment.settledAmount ?? 0)}) differs from invoice amount outside the NIP tolerance band. Manual reconciliation required.`}
-            {payment.exceptionCategory === "STATUS_UNKNOWN" && "No settlement webhook received within 48 hours. Check with your PSP."}
-            {payment.exceptionCategory === "COMPLIANCE_REVIEW_TIMEOUT" && "Compliance review was not completed within the required window."}
-          </p>
+        <div style={{ background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 13, padding: "14px 18px", marginBottom: 14, display: "flex", alignItems: "flex-start", gap: 12 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: "#dc4338", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#a32820" }}>Exception: {payment.exceptionCategory?.replace(/_/g, " ")}</div>
+            <div style={{ fontSize: 12, color: "#b3261e", marginTop: 3 }}>
+              {payment.exceptionCategory === "PSP_FAILURE" && "The PSP returned a failure status. Retry from the Exception Queue or cancel this request."}
+              {payment.exceptionCategory === "AMOUNT_MISMATCH" && `Settled amount (${formatNaira(payment.settledAmount ?? 0)}) differs from invoice outside the NIP tolerance band. Manual reconciliation required.`}
+              {payment.exceptionCategory === "STATUS_UNKNOWN" && "No settlement webhook received within 48 hours. Check with your PSP."}
+              {payment.exceptionCategory === "COMPLIANCE_REVIEW_TIMEOUT" && "Compliance review was not completed within the required window."}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Rejection reason */}
+      {/* Cancelled */}
       {payment.status === "cancelled" && payment.rejectionReason && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
-          <p className="text-xs font-medium text-gray-500 mb-1">Rejection reason</p>
-          <p className="text-sm text-gray-700">{payment.rejectionReason}</p>
+        <div style={{ background: "#f5f6f8", border: "1px solid #e8eaed", borderRadius: 13, padding: "14px 18px", marginBottom: 14 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: "#8a97a6", marginBottom: 6 }}>Rejection reason</div>
+          <div style={{ fontSize: 13, color: "#3f4d5a" }}>{payment.rejectionReason}</div>
         </div>
       )}
 
       {/* Compliance review */}
       {payment.status === "compliance_review" && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 mb-4">
-          <p className="text-sm font-semibold text-orange-900 mb-1">⚖ Compliance Review Required</p>
-          <p className="text-xs text-orange-800 mb-3">
-            <strong>Trigger:</strong> {triggerLabels[payment.complianceTrigger ?? ""] ?? payment.complianceTrigger}
-          </p>
-
-          {error && (
-            <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">{error}</div>
-          )}
-
-          {isChecker && !isComplianceResolver && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleCompliance("clear")}
-                disabled={loading}
-                className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                {loading ? "…" : "Clear review — proceed to approval"}
+        <div style={{ background: "#fdeee2", border: "1px solid #f6cdb0", borderRadius: 13, padding: "16px 20px", marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#9a4513", marginBottom: 4 }}>Compliance Review Required</div>
+          <div style={{ fontSize: 12.5, color: "#8a4010", marginBottom: 14 }}>
+            <strong>Trigger:</strong> {TRIGGER_LABELS[payment.complianceTrigger ?? ""] ?? payment.complianceTrigger}
+          </div>
+          {error && <div style={{ marginBottom: 12, padding: "9px 12px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 8, fontSize: 12.5, color: "#b3261e" }}>{error}</div>}
+          {isChecker && !isComplianceResolver ? (
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => handleCompliance("clear")} disabled={loading}
+                style={{ flex: 1, height: 40, background: "#e07235", color: "#fff", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.7 : 1 }}>
+                {loading ? "…" : "Clear — proceed to approval"}
               </button>
-              <button
-                onClick={() => handleCompliance("block")}
-                disabled={loading}
-                className="flex-1 py-2 bg-white hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed border border-red-300 text-red-700 text-xs font-medium rounded-lg transition-colors"
-              >
+              <button onClick={() => handleCompliance("block")} disabled={loading}
+                style={{ flex: 1, height: 40, background: "#fff", color: "#b3261e", border: "1px solid #f1c5c1", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.7 : 1 }}>
                 Block payment
               </button>
             </div>
+          ) : (
+            <div style={{ fontSize: 12.5, color: "#8a4010" }}>Awaiting Checker review. You created this request and cannot action the compliance review.</div>
           )}
-          {isMaker && <p className="text-xs text-orange-700 mt-2">Awaiting Checker review. You created this request and cannot action the compliance review.</p>}
         </div>
       )}
 
-      {/* Checker approval */}
+      {/* Checker approval panel */}
       {payment.status === "pending_approval" && isChecker && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
-          <p className="text-sm font-semibold text-gray-900 mb-3">Approve or reject</p>
+        <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, padding: "20px 22px", marginBottom: 14 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#0c1d2e", marginBottom: 16 }}>Four-eyes approval</div>
 
-          {error && (
-            <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">{error}</div>
-          )}
+          {error && <div style={{ marginBottom: 14, padding: "9px 12px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 8, fontSize: 12.5, color: "#b3261e" }}>{error}</div>}
 
           {canApprove ? (
             <>
-              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                <label className="block text-xs font-semibold text-gray-700 mb-2">4-digit approval PIN</label>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={4}
-                  value={pin}
-                  onChange={e => setPin(e.target.value)}
-                  className="w-36 px-4 py-3 border border-gray-300 rounded-lg text-xl text-center tracking-[0.4em] font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                  placeholder="····"
-                  autoFocus
-                />
-                <p className="text-xs text-gray-400 mt-2">PIN is validated server-side — this approval is your digital signature.</p>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3f4d5a", marginBottom: 12 }}>4-digit approval PIN</label>
+                <SegmentedPIN value={pin} onChange={setPin} />
+                <div style={{ fontSize: 11.5, color: "#9aa6b2", marginTop: 10 }}>PIN is validated server-side — this approval is your digital signature.</div>
               </div>
-              <button
-                onClick={handleApprove}
-                disabled={loading || pin.length !== 4}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
-              >
+              <button onClick={handleApprove} disabled={loading || pin.length !== 4}
+                style={{ width: "100%", height: 46, background: "#0e7a5a", color: "#fff", border: "none", borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: (loading || pin.length !== 4) ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: (loading || pin.length !== 4) ? 0.5 : 1, marginBottom: 18 }}>
                 {loading ? "Verifying PIN…" : "Approve & dispatch to PSP"}
               </button>
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Reject with reason</label>
-                <textarea
-                  value={rejectReason}
-                  onChange={e => setRejectReason(e.target.value)}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+              <div style={{ paddingTop: 18, borderTop: "1px solid #f1f3f5" }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3f4d5a", marginBottom: 8 }}>Reject with reason</label>
+                <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={2}
                   placeholder="Minimum 10 characters…"
-                />
-                <button
-                  onClick={handleReject}
-                  disabled={loading || rejectReason.trim().length < 10}
-                  className="mt-2 px-4 py-2 border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium rounded-lg transition-colors"
-                >
+                  style={{ width: "100%", border: "1px solid #dce1e6", borderRadius: 9, padding: "10px 13px", fontSize: 13, fontFamily: "inherit", resize: "none", boxSizing: "border-box" }} />
+                <button onClick={handleReject} disabled={loading || rejectReason.trim().length < 10}
+                  style={{ marginTop: 8, padding: "8px 16px", background: "transparent", color: "#b3261e", border: "1px solid #f1c5c1", borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: (loading || rejectReason.trim().length < 10) ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: (loading || rejectReason.trim().length < 10) ? 0.5 : 1 }}>
                   Reject payment
                 </button>
               </div>
             </>
           ) : (
-            <p className="text-xs text-gray-500">
+            <div style={{ fontSize: 12.5, color: "#6b7785", padding: "12px 14px", background: "#f5f6f8", borderRadius: 9 }}>
               {isMaker ? "You created this request and cannot approve it (Maker-Checker rule)." :
                isComplianceResolver ? "You cleared the compliance review for this payment and cannot also approve it (four-eyes rule)." :
                "You do not have permission to approve this payment."}
-            </p>
+            </div>
           )}
         </div>
       )}
 
-      {payment.status === "pending_approval" && !isChecker && !isMaker && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <p className="text-sm text-yellow-800">Awaiting Checker approval (Admin or Owner).</p>
+      {payment.status === "pending_approval" && !isChecker && (
+        <div style={{ background: "#fcf7e6", border: "1px solid #e8d28a", borderRadius: 13, padding: "14px 18px" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#8a6510", marginBottom: 3 }}>Awaiting Checker approval</div>
+          <div style={{ fontSize: 12, color: "#9a7820" }}>An Admin or Owner must review and approve this payment request.</div>
         </div>
       )}
     </div>

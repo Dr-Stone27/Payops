@@ -6,6 +6,9 @@ import { createPayment } from "@/actions/payments";
 
 interface Vendor { id: string; legalName: string; kybStatus: string; nubanLast4: string; bankName: string; }
 
+const INPUT: React.CSSProperties = { width: "100%", height: 42, border: "1px solid #dce1e6", borderRadius: 9, padding: "0 13px", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box", background: "#fff", color: "#0c1d2e" };
+const LABEL: React.CSSProperties = { display: "block", fontSize: 12, fontWeight: 600, color: "#3f4d5a", marginBottom: 6 };
+
 export default function NewPaymentPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [error, setError] = useState("");
@@ -25,44 +28,44 @@ export default function NewPaymentPage() {
     setLoading(true);
     setError("");
     const fd = new FormData(e.currentTarget);
-    // Use filename as stand-in for PDF (actual upload out of scope for demo)
     const fileInput = e.currentTarget.querySelector<HTMLInputElement>('input[type="file"]');
-    if (fileInput?.files?.[0]) {
-      fd.set("invoicePdfName", fileInput.files[0].name);
-    }
+    if (fileInput?.files?.[0]) fd.set("invoicePdfName", fileInput.files[0].name);
     const result = await createPayment(fd);
-    if (result?.error) {
-      setError(result.error);
-      setLoading(false);
-    }
+    if (result?.error) { setError(result.error); setLoading(false); }
   }
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
-      <div className="mb-6">
-        <Link href="/payments" className="text-sm text-gray-500 hover:text-gray-700">← Back to payments</Link>
-        <h1 className="text-xl font-semibold text-gray-900 mt-2">New payment request</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Must be backed by an invoice. Checker approval required before execution.</p>
+    <div style={{ padding: "30px 36px 80px", maxWidth: 560, margin: "0 auto" }}>
+      <div style={{ marginBottom: 22 }}>
+        <Link href="/payments" style={{ fontSize: 12.5, color: "#8a97a6", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 500 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Payments
+        </Link>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: "10px 0 4px", letterSpacing: "-.02em", color: "#0c1d2e" }}>New payment request</h1>
+        <p style={{ fontSize: 13, color: "#6b7785", margin: 0 }}>Must be backed by an invoice. Checker approval required before execution.</p>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      {isHighValue && (
+        <div style={{ marginBottom: 16, padding: "11px 14px", background: "#fdeee2", border: "1px solid #f6cdb0", borderRadius: 10, fontSize: 12.5, color: "#9a4513", display: "flex", alignItems: "flex-start", gap: 10 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+          <div><strong>Compliance review will be triggered.</strong> Payments ≥ ₦5,000,000 require compliance review before reaching a Checker.</div>
+        </div>
+      )}
+
+      <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, padding: 28, boxShadow: "0 1px 4px rgba(12,29,46,.06)" }}>
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+          <div style={{ marginBottom: 16, padding: "10px 13px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 9, fontSize: 12.5, color: "#b3261e" }}>{error}</div>
         )}
 
-        {isHighValue && (
-          <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-800">
-            ⚖️ <strong>Compliance review will be triggered.</strong> Payments ≥ ₦5,000,000 require compliance review before reaching a Checker.
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={LABEL}>Vendor</label>
             {approvedVendors.length === 0 ? (
-              <p className="text-sm text-red-500">No approved vendors yet. <Link href="/vendors/new" className="underline">Add one first.</Link></p>
+              <div style={{ fontSize: 12.5, color: "#b3261e", padding: "10px 13px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 9 }}>
+                No approved vendors yet. <Link href="/vendors/new" style={{ color: "#b3261e", fontWeight: 600, textDecoration: "underline" }}>Add one first.</Link>
+              </div>
             ) : (
-              <select name="vendorId" required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+              <select name="vendorId" required style={{ ...INPUT, appearance: "none" }}>
                 <option value="">Select a vendor</option>
                 {approvedVendors.map(v => (
                   <option key={v.id} value={v.id}>{v.legalName} — {v.bankName} ••••{v.nubanLast4}</option>
@@ -71,52 +74,39 @@ export default function NewPaymentPage() {
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
-            <input name="invoiceNumber" required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="INV-2026-001" />
+          <div style={{ marginBottom: 14 }}>
+            <label style={LABEL}>Invoice Number</label>
+            <input name="invoiceNumber" required placeholder="INV-2026-001" style={{ ...INPUT, fontFamily: "var(--font-mono)" }} />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Amount (₦) {isHighValue && <span className="text-orange-600 text-xs">— High value</span>}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ ...LABEL, display: "flex", alignItems: "center", gap: 8 }}>
+              Amount (₦)
+              {isHighValue && <span style={{ fontSize: 10.5, fontWeight: 600, color: "#9a4513", background: "#fdeee2", borderRadius: 999, padding: "2px 8px" }}>High value</span>}
             </label>
-            <input
-              name="amount"
-              type="number"
-              min="1"
-              step="0.01"
-              required
-              value={amountNaira}
-              onChange={e => setAmountNaira(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="500000"
-            />
+            <input name="amount" type="number" min="1" step="0.01" required value={amountNaira}
+              onChange={e => setAmountNaira(e.target.value)} placeholder="500000" style={INPUT} />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cost Center</label>
-            <input name="costCenter" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Operations / Logistics" />
+          <div style={{ marginBottom: 14 }}>
+            <label style={LABEL}>Cost Center</label>
+            <input name="costCenter" placeholder="Operations / Logistics" style={INPUT} />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Invoice PDF <span className="text-red-500">*</span>
+          <div style={{ marginBottom: 22 }}>
+            <label style={LABEL}>
+              Invoice PDF <span style={{ color: "#dc4338" }}>*</span>
+              <span style={{ fontSize: 11, fontWeight: 400, color: "#9aa6b2", marginLeft: 6 }}>Checker will verify amount against this document</span>
             </label>
-            <input
-              type="file"
-              accept=".pdf"
-              required
-              onChange={e => setHasFile(!!e.target.files?.[0])}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 file:mr-3 file:text-xs file:bg-gray-100 file:border-0 file:rounded file:px-2 file:py-1"
-            />
-            <p className="text-xs text-gray-400 mt-1">Checker will verify the amount on this PDF against the amount entered above</p>
+            <div style={{ border: "1px solid #dce1e6", borderRadius: 9, padding: "10px 13px", background: "#f8f9fb" }}>
+              <input type="file" accept=".pdf" required onChange={e => setHasFile(!!e.target.files?.[0])}
+                style={{ fontSize: 12.5, color: "#6b7785", width: "100%" }} />
+            </div>
+            {hasFile && <div style={{ fontSize: 11.5, color: "#0e7a5a", marginTop: 5, fontWeight: 500 }}>File selected</div>}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading || approvedVendors.length === 0}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
-          >
+          <button type="submit" disabled={loading || approvedVendors.length === 0}
+            style={{ width: "100%", height: 44, background: (loading || approvedVendors.length === 0) ? "#5aad8e" : "#0e7a5a", color: "#fff", border: "none", borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: (loading || approvedVendors.length === 0) ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: (loading || approvedVendors.length === 0) ? 0.7 : 1 }}>
             {loading ? "Submitting…" : "Submit payment request"}
           </button>
         </form>

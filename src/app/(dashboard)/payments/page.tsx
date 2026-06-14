@@ -1,96 +1,128 @@
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { formatNaira } from "@/lib/compliance";
+import { STATUS_BADGE, avatarColor, getInitials } from "@/lib/design";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_LABEL: Record<string, string> = {
-  pending_approval: "Pending Approval",
-  compliance_review: "Compliance Review",
-  processing: "Processing",
-  settled: "Settled",
-  reconciled: "Reconciled",
-  exception_queue: "Exception",
-  cancelled: "Cancelled",
-};
+const ALL_STATUSES = [
+  { key: "all", label: "All" },
+  { key: "pending_approval", label: "Pending" },
+  { key: "compliance_review", label: "Compliance" },
+  { key: "processing", label: "Processing" },
+  { key: "settled", label: "Settled" },
+  { key: "reconciled", label: "Reconciled" },
+  { key: "exception_queue", label: "Exception" },
+  { key: "cancelled", label: "Cancelled" },
+];
 
-const STATUS_COLOR: Record<string, string> = {
-  pending_approval: "bg-yellow-100 text-yellow-800",
-  compliance_review: "bg-orange-100 text-orange-800",
-  processing: "bg-blue-100 text-blue-800",
-  settled: "bg-cyan-100 text-cyan-800",
-  reconciled: "bg-emerald-100 text-emerald-800",
-  exception_queue: "bg-red-100 text-red-800",
-  cancelled: "bg-gray-100 text-gray-500",
-};
-
-export default async function PaymentsPage() {
+export default async function PaymentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
   const session = await getSession();
   if (!session) return null;
 
+  const { status: filterStatus } = await searchParams;
+  const activeFilter = filterStatus && filterStatus !== "all" ? filterStatus : undefined;
+
   const payments = await prisma.paymentRequest.findMany({
-    where: { businessId: session.businessId },
+    where: {
+      businessId: session.businessId,
+      ...(activeFilter ? { status: activeFilter } : {}),
+    },
     include: { vendor: true, maker: { select: { fullName: true } } },
     orderBy: { createdAt: "desc" },
   });
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ padding: "30px 36px 80px", maxWidth: 1080, margin: "0 auto" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Payments</h1>
-          <p className="text-sm text-gray-500 mt-0.5">All payment requests across states</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, letterSpacing: "-.02em", color: "#0c1d2e" }}>Payments</h1>
+          <p style={{ fontSize: 13.5, color: "#6b7785", margin: "4px 0 0" }}>All payment requests across states</p>
         </div>
-        <Link
-          href="/payments/new"
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          + New payment
+        <Link href="/payments/new" style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 38, padding: "0 16px", borderRadius: 9, background: "#0e7a5a", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          New payment
         </Link>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {payments.length === 0 ? (
-          <div className="px-5 py-12 text-center text-sm text-gray-400">
-            No payments yet.{" "}
-            <Link href="/payments/new" className="text-emerald-600 hover:underline">
-              Create the first one.
+      {/* Filter pills */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+        {ALL_STATUSES.map((s) => {
+          const isActive = (!filterStatus || filterStatus === "all") ? s.key === "all" : filterStatus === s.key;
+          return (
+            <Link key={s.key} href={`/payments?status=${s.key}`}
+              style={{ padding: "5px 13px", borderRadius: 999, fontSize: 12, fontWeight: 600, textDecoration: "none",
+                background: isActive ? "#0c1d2e" : "#fff",
+                color: isActive ? "#fff" : "#6b7785",
+                border: isActive ? "1px solid #0c1d2e" : "1px solid #e8eaed" }}>
+              {s.label}
             </Link>
+          );
+        })}
+      </div>
+
+      <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, overflow: "hidden" }}>
+        {payments.length === 0 ? (
+          <div style={{ padding: "52px 24px", textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#3f4d5a" }}>No payments {activeFilter ? "in this state" : "yet"}</div>
+            <div style={{ fontSize: 12.5, color: "#98a3b0", margin: "6px auto 16px", maxWidth: 360, lineHeight: 1.5 }}>
+              {activeFilter ? "Try selecting a different filter." : "You'll need at least one approved vendor before submitting a request."}
+            </div>
+            {!activeFilter && (
+              <Link href="/vendors/new" style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 9, padding: "9px 16px", textDecoration: "none", display: "inline-block" }}>
+                Add first vendor
+              </Link>
+            )}
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Vendor</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Invoice</th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-gray-400">Amount</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Maker</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Status</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Date</th>
+              <tr style={{ borderBottom: "1px solid #eef0f3" }}>
+                {["Vendor", "Invoice", "Amount", "Maker", "Status", "Date"].map((h, i) => (
+                  <th key={h} style={{ textAlign: i === 2 ? "right" : "left", fontSize: 11, fontWeight: 500, color: "#8a97a6", padding: i === 0 ? "9px 19px" : i === 5 ? "9px 19px 9px 12px" : "9px 12px" }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {payments.map((p) => (
-                <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-5 py-3">
-                    <Link href={`/payments/${p.id}`} className="font-medium text-gray-900 hover:text-emerald-700">
-                      {p.vendor.legalName}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3 text-gray-500">{p.invoiceNumber}</td>
-                  <td className="px-5 py-3 text-right font-medium tabular-nums">{formatNaira(p.amount)}</td>
-                  <td className="px-5 py-3 text-gray-500 text-xs">{p.maker.fullName}</td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[p.status] ?? "bg-gray-100 text-gray-500"}`}>
-                      {STATUS_LABEL[p.status] ?? p.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">
-                    {new Date(p.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
-                  </td>
-                </tr>
-              ))}
+              {payments.map((p) => {
+                const badge = STATUS_BADGE[p.status] ?? STATUS_BADGE.cancelled;
+                const av = avatarColor(p.vendor.legalName);
+                const ini = getInitials(p.vendor.legalName);
+                const makerAv = avatarColor(p.maker.fullName);
+                const makerIni = getInitials(p.maker.fullName);
+                return (
+                  <tr key={p.id} style={{ borderTop: "1px solid #f1f3f5" }}>
+                    <td style={{ padding: "11px 19px" }}>
+                      <Link href={`/payments/${p.id}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, background: av.bg, color: av.fg, fontSize: 10.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{ini}</div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#0c1d2e" }}>{p.vendor.legalName}</span>
+                      </Link>
+                    </td>
+                    <td style={{ padding: "11px 12px", fontSize: 12.5, color: "#6b7785", fontFamily: "var(--font-mono)" }}>{p.invoiceNumber}</td>
+                    <td style={{ padding: "11px 12px", fontSize: 13, fontWeight: 600, color: "#0c1d2e", textAlign: "right" }}>{formatNaira(p.amount)}</td>
+                    <td style={{ padding: "11px 12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: 6, background: makerAv.bg, color: makerAv.fg, fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{makerIni}</div>
+                        <span style={{ fontSize: 12, color: "#6b7785" }}>{p.maker.fullName}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: "11px 12px" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 600, padding: "3px 10px 3px 8px", borderRadius: 999, background: badge.bg, color: badge.fg }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: badge.dot, flexShrink: 0 }} />
+                        {badge.label}
+                      </span>
+                    </td>
+                    <td style={{ padding: "11px 19px 11px 12px", fontSize: 12.5, color: "#6b7785" }}>
+                      {new Date(p.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

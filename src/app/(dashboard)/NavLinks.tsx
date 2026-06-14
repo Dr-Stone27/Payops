@@ -3,94 +3,116 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const DashboardIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 flex-shrink-0">
-    <rect x="1" y="1" width="6" height="6" rx="1" />
-    <rect x="9" y="1" width="6" height="6" rx="1" />
-    <rect x="1" y="9" width="6" height="6" rx="1" />
-    <rect x="9" y="9" width="6" height="6" rx="1" />
-  </svg>
-);
+function DashIcon() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>;
+}
+function PayIcon() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>;
+}
+function VendorIcon() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01"/></svg>;
+}
+function ShieldIcon() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+}
+function AlertIcon() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>;
+}
+function DocIcon() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>;
+}
+function TeamIcon() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11"/></svg>;
+}
 
-const VendorsIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 flex-shrink-0">
-    <path d="M2 14V6.5l5-2.5 5 2.5V14H9.5v-3.5h-3V14H2z" />
-    <rect x="6.5" y="1" width="3" height="2" rx="0.5" />
-  </svg>
-);
-
-const PaymentsIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
-    <path d="M3 13L13 3M13 3H7M13 3v6" />
-  </svg>
-);
-
-const ShieldIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
-    <path d="M8 1.5L2 4v4.5C2 11.5 4.5 14 8 15c3.5-1 6-3.5 6-6.5V4L8 1.5z" />
-    <path d="M5.5 8l1.5 1.5 3.5-3.5" />
-  </svg>
-);
-
-const TriangleIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
-    <path d="M8 2.5L1.5 13.5h13L8 2.5z" />
-    <line x1="8" y1="6.5" x2="8" y2="9.5" />
-    <circle cx="8" cy="11.5" r="0.5" fill="currentColor" stroke="none" />
-  </svg>
-);
-
-const ListIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="w-4 h-4 flex-shrink-0">
-    <line x1="2" y1="4" x2="14" y2="4" />
-    <line x1="2" y1="8" x2="14" y2="8" />
-    <line x1="2" y1="12" x2="11" y2="12" />
-  </svg>
-);
-
-const TeamIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
-    <circle cx="6" cy="5.5" r="2.5" />
-    <path d="M1 14c0-2.8 2.2-5 5-5s5 2.2 5 5" />
-    <circle cx="12.5" cy="5.5" r="1.8" opacity="0.5" />
-    <path d="M14.5 13c-.2-1.8-1.3-3.2-2.8-3.8" opacity="0.5" />
-  </svg>
-);
-
-const NAV = [
-  { href: "/dashboard", label: "Dashboard", Icon: DashboardIcon, exact: true },
-  { href: "/vendors", label: "Vendors", Icon: VendorsIcon, exact: false },
-  { href: "/payments", label: "Payments", Icon: PaymentsIcon, exact: false },
-  { href: "/compliance", label: "Compliance Queue", Icon: ShieldIcon, exact: false },
-  { href: "/exceptions", label: "Exception Queue", Icon: TriangleIcon, exact: false },
-  { href: "/audit", label: "Audit Log", Icon: ListIcon, exact: false },
-  { href: "/team", label: "Team", Icon: TeamIcon, exact: false },
+const GROUPS = [
+  {
+    label: "Overview",
+    items: [{ href: "/dashboard", label: "Dashboard", Icon: DashIcon, exact: true }],
+  },
+  {
+    label: "Operations",
+    items: [
+      { href: "/payments", label: "Payments", Icon: PayIcon, exact: false },
+      { href: "/vendors",  label: "Vendors",  Icon: VendorIcon, exact: false },
+    ],
+  },
+  {
+    label: "Governance",
+    items: [
+      { href: "/compliance",  label: "Compliance",  Icon: ShieldIcon, exact: false, badge: "compliance" },
+      { href: "/exceptions",  label: "Exceptions",  Icon: AlertIcon,  exact: false, badge: "exceptions" },
+      { href: "/audit",       label: "Audit log",   Icon: DocIcon,    exact: false },
+    ],
+  },
+  {
+    label: "Organization",
+    items: [{ href: "/team", label: "Team", Icon: TeamIcon, exact: false }],
+  },
 ];
 
-export function NavLinks() {
+interface Props {
+  complianceCount: number;
+  exceptionCount: number;
+}
+
+export function NavLinks({ complianceCount, exceptionCount }: Props) {
   const pathname = usePathname();
 
+  const counts: Record<string, number> = {
+    compliance: complianceCount,
+    exceptions: exceptionCount,
+  };
+
   return (
-    <nav className="flex-1 p-3 space-y-0.5">
-      {NAV.map(({ href, label, Icon, exact }) => {
-        const isActive = exact ? pathname === href : pathname.startsWith(href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-              isActive
-                ? "bg-emerald-50 text-emerald-700 font-medium"
-                : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            <span className={isActive ? "text-emerald-600" : "text-gray-400"}>
-              <Icon />
-            </span>
-            {label}
-          </Link>
-        );
-      })}
+    <nav className="flex-1 overflow-y-auto wt-scroll" style={{ padding: "4px 10px" }}>
+      {GROUPS.map((group) => (
+        <div key={group.label}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".09em", textTransform: "uppercase", color: "#9aa6b2", padding: "14px 10px 6px" }}>
+            {group.label}
+          </div>
+          {group.items.map(({ href, label, Icon, exact, badge }) => {
+            const isActive = exact ? pathname === href : pathname.startsWith(href);
+            const count = badge ? counts[badge] : 0;
+            return (
+              <Link
+                key={href}
+                href={href}
+                style={{
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 11,
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  textDecoration: "none",
+                  color: isActive ? "#0e7a5a" : "#3f4d5a",
+                  background: isActive ? "#ecf6f1" : "transparent",
+                  marginBottom: 1,
+                  transition: "background .12s, color .12s",
+                }}
+                onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#f6f8f7"; }}
+                onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                {isActive && (
+                  <span style={{ position: "absolute", left: 0, top: 8, bottom: 8, width: 3, borderRadius: 3, background: "#0e7a5a" }} />
+                )}
+                <span style={{ color: isActive ? "#0e7a5a" : "#8a97a6", flexShrink: 0 }}>
+                  <Icon />
+                </span>
+                <span style={{ flex: 1 }}>{label}</span>
+                {count > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 600, background: badge === "exceptions" ? "#fdeceb" : "#fdeee2", color: badge === "exceptions" ? "#a32820" : "#9a4513", borderRadius: 999, padding: "1px 7px" }}>
+                    {count}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
     </nav>
   );
 }

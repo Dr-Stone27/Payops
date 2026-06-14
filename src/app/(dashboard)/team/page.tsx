@@ -1,20 +1,9 @@
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { avatarColor, getInitials, roleLabel, roleFg } from "@/lib/design";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
-
-const ROLE_COLOR: Record<string, string> = {
-  owner: "bg-emerald-100 text-emerald-700",
-  admin: "bg-blue-100 text-blue-700",
-  maker: "bg-gray-100 text-gray-600",
-};
-
-const ROLE_LABEL: Record<string, string> = {
-  owner: "Owner (Checker)",
-  admin: "Admin (Checker)",
-  maker: "Maker",
-};
 
 export default async function TeamPage() {
   const session = await getSession();
@@ -25,59 +14,75 @@ export default async function TeamPage() {
     orderBy: { createdAt: "asc" },
   });
 
+  const isAdmin = ["owner", "admin"].includes(session.role);
+
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ padding: "30px 36px 80px", maxWidth: 760, margin: "0 auto" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Team Members</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Makers create payment requests. Checkers (Admin/Owner) approve them — four-eyes rule enforced.
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, letterSpacing: "-.02em", color: "#0c1d2e" }}>Team</h1>
+          <p style={{ fontSize: 13.5, color: "#6b7785", margin: "4px 0 0" }}>
+            Makers create requests. Checkers (Admin/Owner) approve them.
           </p>
         </div>
-        {["owner", "admin"].includes(session.role) && (
-          <Link
-            href="/team/new"
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            + Add member
+        {isAdmin && (
+          <Link href="/team/new" style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 38, padding: "0 16px", borderRadius: 9, background: "#0e7a5a", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Add member
           </Link>
         )}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
-        <table className="w-full text-sm">
+      <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, overflow: "hidden", marginBottom: 14 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Name</th>
-              <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Email</th>
-              <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">Role</th>
-              <th className="text-left px-5 py-3 text-xs font-medium text-gray-400">PIN</th>
+            <tr style={{ borderBottom: "1px solid #eef0f3" }}>
+              {["Member", "Email", "Role", "PIN"].map((h, i) => (
+                <th key={h} style={{ textAlign: "left", fontSize: 11, fontWeight: 500, color: "#8a97a6", padding: i === 0 ? "9px 19px" : "9px 12px" }}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {members.map((m) => (
-              <tr key={m.id} className="border-b border-gray-50 hover:bg-gray-50">
-                <td className="px-5 py-3 font-medium text-gray-900">
-                  {m.fullName}
-                  {m.id === session.userId && <span className="ml-2 text-xs text-gray-400">(you)</span>}
-                </td>
-                <td className="px-5 py-3 text-gray-500">{m.email}</td>
-                <td className="px-5 py-3">
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLOR[m.role] ?? "bg-gray-100 text-gray-500"}`}>
-                    {ROLE_LABEL[m.role] ?? m.role}
-                  </span>
-                </td>
-                <td className="px-5 py-3 text-xs text-gray-400">
-                  {m.pinHash ? "✓ Set" : <span className="text-orange-500">Not set</span>}
-                </td>
-              </tr>
-            ))}
+            {members.map((m) => {
+              const av = avatarColor(m.fullName);
+              const ini = getInitials(m.fullName);
+              const isYou = m.id === session.userId;
+              return (
+                <tr key={m.id} style={{ borderTop: "1px solid #f1f3f5" }}>
+                  <td style={{ padding: "12px 19px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 9, background: av.bg, color: av.fg, fontSize: 11.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{ini}</div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#0c1d2e", display: "flex", alignItems: "center", gap: 8 }}>
+                          {m.fullName}
+                          {isYou && <span style={{ fontSize: 10, fontWeight: 600, color: "#8a97a6", background: "#f1f3f5", borderRadius: 999, padding: "2px 7px" }}>you</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 12px", fontSize: 13, color: "#6b7785" }}>{m.email}</td>
+                  <td style={{ padding: "12px 12px" }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: roleFg(m.role) }}>{roleLabel(m.role)}</span>
+                  </td>
+                  <td style={{ padding: "12px 12px" }}>
+                    {m.pinHash ? (
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#0e7a5a", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                        Set
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#d4a41a" }}>Not set</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800">
-        <strong>Four-eyes rule:</strong> The person who creates a payment (Maker) cannot approve it. If a Checker also cleared the compliance review for a payment, they cannot then approve the same payment — a different Checker must approve.
+      <div style={{ background: "#fcf7e6", border: "1px solid #e8d28a", borderRadius: 12, padding: "12px 16px", fontSize: 12.5, color: "#8a6510", lineHeight: 1.5 }}>
+        <strong>Four-eyes rule:</strong> The person who creates a payment cannot approve it. If a Checker also cleared compliance review for a payment, a different Checker must approve it.
       </div>
     </div>
   );

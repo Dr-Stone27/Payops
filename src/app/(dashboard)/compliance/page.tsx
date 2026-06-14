@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { formatNaira } from "@/lib/compliance";
+import { avatarColor, getInitials } from "@/lib/design";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -24,49 +25,59 @@ export default async function CompliancePage() {
   });
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Compliance Queue</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Payments flagged for review before reaching a Checker. Must be cleared by a Checker who did not create the request.
+    <div style={{ padding: "30px 36px 80px", maxWidth: 760, margin: "0 auto" }}>
+      <div style={{ marginBottom: 22 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, letterSpacing: "-.02em", color: "#0c1d2e" }}>Compliance Queue</h1>
+        <p style={{ fontSize: 13.5, color: "#6b7785", margin: "4px 0 0" }}>
+          Flagged payments awaiting Checker review before approval.
         </p>
       </div>
 
       {queue.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl px-5 py-14 text-center">
-          <div className="inline-flex items-center justify-center w-10 h-10 bg-emerald-50 rounded-full mb-3">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-emerald-600">
-              <path d="M10 2L3 5v5c0 3.5 3 6.5 7 7.5 4-1 7-4 7-7.5V5L10 2z" />
-              <path d="M7 10l2 2 4-4" />
+        <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, padding: "52px 24px", textAlign: "center" }}>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#e6faf4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0e7a5a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>
             </svg>
           </div>
-          <p className="text-sm font-medium text-gray-700">Compliance queue is clear</p>
-          <p className="text-xs text-gray-400 mt-1">Payments ≥ ₦5M, duplicate invoices, or ambiguous KYB matches appear here for review before reaching a Checker.</p>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#3f4d5a" }}>Compliance queue is clear</div>
+          <div style={{ fontSize: 12.5, color: "#98a3b0", margin: "6px auto 0", maxWidth: 380, lineHeight: 1.5 }}>
+            Payments ≥ ₦5M, duplicate invoices, or ambiguous KYB matches appear here for review before reaching a Checker.
+          </div>
         </div>
       ) : (
-        <div className="space-y-3">
-          {queue.map(p => (
-            <div key={p.id} className="bg-white border border-orange-200 rounded-xl p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="font-medium text-gray-900">{p.vendor.legalName}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Invoice {p.invoiceNumber} · Created by {p.maker.fullName}</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {queue.map(p => {
+            const av = avatarColor(p.vendor.legalName);
+            const ini = getInitials(p.vendor.legalName);
+            return (
+              <div key={p.id} style={{ background: "#fff", border: "1px solid #f6cdb0", borderRadius: 13, padding: "18px 20px", boxShadow: "0 0 0 3px rgba(224,114,53,.06)" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: av.bg, color: av.fg, fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{ini}</div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#0c1d2e" }}>{p.vendor.legalName}</div>
+                      <div style={{ fontSize: 12, color: "#8a97a6", marginTop: 2, fontFamily: "var(--font-mono)" }}>
+                        {p.invoiceNumber} · {p.maker.fullName}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: "#0c1d2e", letterSpacing: "-.01em" }}>{formatNaira(p.amount)}</div>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 5, fontSize: 11.5, fontWeight: 600, padding: "3px 9px 3px 7px", borderRadius: 999, background: "#fdeee2", color: "#9a4513" }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#e07235", flexShrink: 0 }} />
+                      {TRIGGER_LABEL[p.complianceTrigger ?? ""] ?? p.complianceTrigger}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-gray-900">{formatNaira(p.amount)}</p>
-                  <span className="inline-flex mt-1 px-2 py-0.5 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
-                    {TRIGGER_LABEL[p.complianceTrigger ?? ""] ?? p.complianceTrigger}
-                  </span>
-                </div>
+                <Link href={`/payments/${p.id}`}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, height: 40, borderRadius: 9, background: "#e07235", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                  Review this payment
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </Link>
               </div>
-              <Link
-                href={`/payments/${p.id}`}
-                className="block w-full text-center py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Review this payment →
-              </Link>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
