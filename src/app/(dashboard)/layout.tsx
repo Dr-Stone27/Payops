@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { NavLinks } from "./NavLinks";
 import { TopBar } from "./TopBar";
 import { logout } from "@/actions/auth";
+import { WalkthroughProvider } from "@/context/WalkthroughContext";
+import { WalkthroughBanner } from "@/components/WalkthroughBanner";
 
 function LighthouseIcon() {
   return (
@@ -21,9 +23,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [complianceCount, exceptionCount] = await Promise.all([
+  const [complianceCount, exceptionCount, teamCount, approvedVendorCount, paymentCount] = await Promise.all([
     prisma.paymentRequest.count({ where: { businessId: session.businessId, status: "compliance_review" } }),
     prisma.paymentRequest.count({ where: { businessId: session.businessId, status: "exception_queue" } }),
+    prisma.user.count({ where: { businessId: session.businessId } }),
+    prisma.vendor.count({ where: { businessId: session.businessId, kybStatus: "approved" } }),
+    prisma.paymentRequest.count({ where: { businessId: session.businessId } }),
   ]);
 
   const business = await prisma.business.findUnique({ where: { id: session.businessId } });
@@ -77,10 +82,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* ── Main column ── */}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", height: "100vh" }}>
-        <TopBar session={{ fullName: session.fullName, role: session.role, email: "" }} />
-        <main className="wt-scroll" style={{ flex: 1, overflowY: "auto", background: "#f5f6f8" }}>
-          {children}
-        </main>
+        <WalkthroughProvider
+          userId={session.userId}
+          role={session.role}
+          hasApprovedVendor={approvedVendorCount > 0}
+          hasPayments={paymentCount > 0}
+          hasTeamMember={teamCount > 1}
+        >
+          <TopBar session={{ fullName: session.fullName, role: session.role, email: "" }} />
+          <main className="wt-scroll" style={{ flex: 1, overflowY: "auto", background: "#f5f6f8" }}>
+            <WalkthroughBanner />
+            {children}
+          </main>
+        </WalkthroughProvider>
       </div>
     </div>
   );

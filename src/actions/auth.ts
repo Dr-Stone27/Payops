@@ -174,7 +174,9 @@ export async function setupPin(formData: FormData) {
   const confirmPin = String(formData.get("confirmPin") ?? "");
 
   if (!/^\d{4}$/.test(pin)) return { error: "PIN must be exactly 4 digits." };
-  if (pin !== confirmPin) return { error: "PINs do not match." };
+  if (pin !== confirmPin) return { error: "Those PINs don't match. Try again." };
+  const { COMMON_PINS } = await import("@/lib/walkthrough");
+  if (COMMON_PINS.has(pin)) return { error: "That PIN is too easy to guess. Choose something less predictable." };
 
   const pinHash = await bcrypt.hash(pin, 10);
   await prisma.user.update({

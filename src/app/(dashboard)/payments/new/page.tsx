@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createPayment } from "@/actions/payments";
+import { InfoTooltip } from "@/components/Tooltip";
 
 interface Vendor { id: string; legalName: string; kybStatus: string; nubanLast4: string; bankName: string; }
 
@@ -59,7 +60,10 @@ export default function NewPaymentPage() {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 14 }}>
-            <label style={LABEL}>Vendor</label>
+            <label style={{ ...LABEL, display: "flex", alignItems: "center", gap: 6 }}>
+              Vendor
+              <InfoTooltip content="Only verified vendors appear here. If you can't find your vendor, they may still be in review — check the Vendors tab for their status." />
+            </label>
             {approvedVendors.length === 0 ? (
               <div style={{ fontSize: 12.5, color: "#b3261e", padding: "10px 13px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 9 }}>
                 No approved vendors yet. <Link href="/vendors/new" style={{ color: "#b3261e", fontWeight: 600, textDecoration: "underline" }}>Add one first.</Link>
@@ -75,7 +79,10 @@ export default function NewPaymentPage() {
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <label style={LABEL}>Invoice Number</label>
+            <label style={{ ...LABEL, display: "flex", alignItems: "center", gap: 6 }}>
+              Invoice Number
+              <InfoTooltip content="We use this to detect duplicate payments. If a request with this invoice number already exists for this vendor, we'll flag it before it reaches your approver." />
+            </label>
             <input name="invoiceNumber" required placeholder="INV-2026-001" style={{ ...INPUT, fontFamily: "var(--font-mono)" }} />
           </div>
 
@@ -89,14 +96,17 @@ export default function NewPaymentPage() {
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <label style={LABEL}>Cost Center</label>
+            <label style={{ ...LABEL, display: "flex", alignItems: "center", gap: 6 }}>
+              Cost Center
+              <InfoTooltip content="Tag this payment to a department or project. Useful for month-end reporting and audit trail filtering." />
+            </label>
             <input name="costCenter" placeholder="Operations / Logistics" style={INPUT} />
           </div>
 
           <div style={{ marginBottom: 22 }}>
-            <label style={LABEL}>
+            <label style={{ ...LABEL, display: "flex", alignItems: "center", gap: 6 }}>
               Invoice PDF <span style={{ color: "#dc4338" }}>*</span>
-              <span style={{ fontSize: 11, fontWeight: 400, color: "#9aa6b2", marginLeft: 6 }}>Checker will verify amount against this document</span>
+              <InfoTooltip content="Upload the vendor's invoice. Your approver will see this alongside the payment amount to confirm everything matches before approving." />
             </label>
             <div style={{ border: "1px solid #dce1e6", borderRadius: 9, padding: "10px 13px", background: "#f8f9fb" }}>
               <input type="file" accept=".pdf" required onChange={e => setHasFile(!!e.target.files?.[0])}

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { logout } from "@/actions/auth";
 import { getInitials, avatarColor, roleLabel, roleFg } from "@/lib/design";
+import { useWalkthrough } from "@/context/WalkthroughContext";
 
 const PAGE_MAP: Record<string, { label: string; parent?: string; parentHref?: string }> = {
   "/dashboard":     { label: "Overview" },
@@ -29,6 +30,8 @@ interface Session {
 export function TopBar({ session }: { session: Session }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isComplete, stepNumber, totalSteps, role } = useWalkthrough();
+  const showCounter = !isComplete && role === "owner" && stepNumber <= totalSteps;
 
   // Resolve breadcrumb — handle dynamic routes like /payments/[id]
   let page = PAGE_MAP[pathname];
@@ -67,6 +70,16 @@ export function TopBar({ session }: { session: Session }) {
       </div>
 
       <div style={{ flex: 1 }} />
+
+      {/* Setup step counter */}
+      {showCounter && (
+        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "4px 11px", background: "#e6faf4", border: "1px solid #a8dfc9", borderRadius: 999, flexShrink: 0 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0e7a5a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 9.5 8 20"/><path d="M14.5 9.5 16 20"/><path d="M7.5 20h9"/><path d="M9 9.5h6"/><path d="M10 9.5V7h4v2.5"/><path d="M12 4.2v1.6"/><path d="M5.4 7.1l2.6 1"/><path d="M18.6 7.1l-2.6 1"/><path d="M9 15h6"/></svg>
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: "#0e7a5a", whiteSpace: "nowrap" }}>
+            Setup: Step {stepNumber} of {totalSteps}
+          </span>
+        </div>
+      )}
 
       {/* Search */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, height: 36, width: 210, border: "1px solid #e4e7eb", borderRadius: 9, padding: "0 11px", background: "#fbfcfd", color: "#9aa6b2" }}>

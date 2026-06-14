@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { approvePayment, rejectPayment, clearComplianceReview } from "@/actions/payments";
 import { STATUS_BADGE, avatarColor, getInitials } from "@/lib/design";
+import { InfoTooltip } from "@/components/Tooltip";
 
 interface Payment {
   id: string; invoiceNumber: string; amount: number; costCenter: string | null;
@@ -254,7 +255,10 @@ export default function PaymentDetailPage() {
           {canApprove ? (
             <>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3f4d5a", marginBottom: 12 }}>4-digit approval PIN</label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#3f4d5a", marginBottom: 12 }}>
+                  4-digit approval PIN
+                  <InfoTooltip content="Your PIN confirms this payment. It's recorded in the audit log with your name and timestamp. Double-check the details before entering it." wide />
+                </label>
                 <SegmentedPIN value={pin} onChange={setPin} />
                 <div style={{ fontSize: 11.5, color: "#9aa6b2", marginTop: 10 }}>PIN is validated server-side — this approval is your digital signature.</div>
               </div>

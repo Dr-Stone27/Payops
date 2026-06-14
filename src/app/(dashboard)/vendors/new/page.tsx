@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { addVendor } from "@/actions/vendors";
+import { InfoTooltip } from "@/components/Tooltip";
 
 const BANKS = [
   "Access Bank", "First Bank", "GT Bank", "UBA", "Zenith Bank",
@@ -50,14 +51,17 @@ export default function NewVendorPage() {
           <div style={{ paddingBottom: 18, marginBottom: 18, borderBottom: "1px solid #f1f3f5" }}>
             <div style={{ fontSize: 11.5, fontWeight: 600, color: "#8a97a6", marginBottom: 14 }}>Identity</div>
             <div style={{ marginBottom: 14 }}>
-              <label style={LABEL}>
+              <label style={{ ...LABEL, display: "flex", alignItems: "center", gap: 6 }}>
                 Legal Business Name
-                <span style={{ fontSize: 11, fontWeight: 400, color: "#9aa6b2", marginLeft: 6 }}>as registered with CAC</span>
+                <InfoTooltip content="This is the vendor's company name exactly as registered with the Corporate Affairs Commission. We use it to verify against their bank account name." />
               </label>
               <input name="legalName" required placeholder="Apex Freight Solutions Ltd" style={INPUT} />
             </div>
             <div>
-              <label style={LABEL}>CAC Registration Number</label>
+              <label style={{ ...LABEL, display: "flex", alignItems: "center", gap: 6 }}>
+                CAC Registration Number
+                <InfoTooltip content="The vendor's registered company number (e.g. RC-1234567). We use it to look up their official business name with the Corporate Affairs Commission." />
+              </label>
               <input name="cacNumber" required placeholder="RC-2345678" style={{ ...INPUT, fontFamily: "var(--font-mono)" }} />
             </div>
           </div>
@@ -72,7 +76,10 @@ export default function NewVendorPage() {
               </select>
             </div>
             <div>
-              <label style={LABEL}>NUBAN Account Number</label>
+              <label style={{ ...LABEL, display: "flex", alignItems: "center", gap: 6 }}>
+                NUBAN Account Number
+                <InfoTooltip content="The vendor's 10-digit bank account number. We look up the account name registered to this number and compare it to their CAC registration. This stops payments going to the wrong entity." wide />
+              </label>
               <input name="nuban" required maxLength={10} pattern="\d{10}" placeholder="0123451234"
                 style={{ ...INPUT, fontFamily: "var(--font-mono)", letterSpacing: "0.12em" }} />
               <div style={{ fontSize: 11.5, color: "#9aa6b2", marginTop: 5 }}>10-digit NUBAN — last 4 digits visible in the system</div>
