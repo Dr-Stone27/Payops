@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { usePathname } from "next/navigation";
 import { getStepsForRole, getTotalStepsLabel, type WalkthroughStep } from "@/lib/walkthrough";
 
 interface WalkthroughContextValue {
@@ -35,7 +34,6 @@ interface Props {
 }
 
 export function WalkthroughProvider({ userId, role, hasApprovedVendor, hasPayments, hasTeamMember, children }: Props) {
-  const pathname = usePathname();
   const storageKey = `wt_wt_${userId}`;
   const steps = getStepsForRole(role);
   const totalSteps = getTotalStepsLabel(role);
@@ -79,8 +77,6 @@ export function WalkthroughProvider({ userId, role, hasApprovedVendor, hasPaymen
   const activeStep = hydrated && !isComplete
     ? steps.find(step => {
         if (dismissed.has(step.key)) return false;
-        const onPath = step.paths.some(p => pathname === p || pathname.startsWith(p + "/"));
-        if (!onPath) return false;
         if (step.condition === "after-vendor" && !hasApprovedVendor) return false;
         if (step.condition === "after-payment" && !hasPayments) return false;
         return true;

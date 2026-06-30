@@ -81,11 +81,18 @@ export function WalkthroughBanner() {
           <div style={{ fontSize: 14, fontWeight: 700, color: "#0c1d2e", marginBottom: 5 }}>{activeStep.title}</div>
           <p style={{ fontSize: 13, color: "#2a5e47", lineHeight: 1.6, margin: "0 0 14px" }}>{activeStep.body}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {activeStep.cta && activeStep.ctaHref && (
-              <Link href={activeStep.ctaHref}
-                style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 8, padding: "7px 14px", textDecoration: "none" }}>
-                {activeStep.cta}
-              </Link>
+            {activeStep.cta && (
+              activeStep.ctaHref ? (
+                <Link href={activeStep.ctaHref}
+                  style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 8, padding: "7px 14px", textDecoration: "none" }}>
+                  {activeStep.cta}
+                </Link>
+              ) : (
+                <button onClick={() => dismissStep(activeStep.key)}
+                  style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 8, padding: "7px 14px", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+                  {activeStep.cta}
+                </button>
+              )
             )}
             {activeStep.skipLabel && (
               <button onClick={() => dismissStep(activeStep.key)}

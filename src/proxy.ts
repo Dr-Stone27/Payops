@@ -5,7 +5,7 @@ const SECRET = new TextEncoder().encode(
   process.env.SESSION_SECRET || "payops-dev-secret-change-in-production"
 );
 
-const PUBLIC_PATHS = ["/login", "/register", "/api/webhooks"];
+const PUBLIC_PATHS = ["/login", "/register", "/api/auth/register", "/api/auth/login", "/api/webhooks"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -16,6 +16,9 @@ export async function proxy(request: NextRequest) {
 
   const token = request.cookies.get("payops_session")?.value;
   if (!token) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -23,6 +26,9 @@ export async function proxy(request: NextRequest) {
     await jwtVerify(token, SECRET);
     return NextResponse.next();
   } catch {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.redirect(new URL("/login", request.url));
   }
 }
