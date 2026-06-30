@@ -72,7 +72,7 @@ export async function register(formData: FormData) {
     outcome: "success",
   });
 
-  redirect("/dashboard");
+  redirect("/setup-pin");
 }
 
 export async function login(formData: FormData) {
