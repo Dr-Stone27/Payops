@@ -22,6 +22,7 @@ export default function NewPaymentPage() {
   }, []);
 
   const approvedVendors = vendors.filter(v => v.kybStatus === "approved");
+  const pendingVendors = vendors.filter(v => v.kybStatus !== "approved");
   const isHighValue = parseFloat(amountNaira || "0") >= 5_000_000;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -65,8 +66,13 @@ export default function NewPaymentPage() {
               <InfoTooltip content="Only verified vendors appear here. If you can't find your vendor, they may still be in review — check the Vendors tab for their status." />
             </label>
             {approvedVendors.length === 0 ? (
-              <div style={{ fontSize: 12.5, color: "#b3261e", padding: "10px 13px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 9 }}>
-                No approved vendors yet. <Link href="/vendors/new" style={{ color: "#b3261e", fontWeight: 600, textDecoration: "underline" }}>Add one first.</Link>
+              <div style={{ fontSize: 12.5, padding: "10px 13px", borderRadius: 9, ...(pendingVendors.length > 0
+                ? { color: "#8a6510", background: "#fcf7e6", border: "1px solid #e8d28a" }
+                : { color: "#b3261e", background: "#fdeceb", border: "1px solid #f1c5c1" }) }}>
+                {pendingVendors.length > 0
+                  ? <><strong>{pendingVendors.length} vendor{pendingVendors.length > 1 ? "s" : ""} pending KYB review.</strong> An Owner must approve them in the <Link href="/vendors" style={{ color: "#8a6510", fontWeight: 600, textDecoration: "underline" }}>Vendors tab</Link> before they can receive payments.</>
+                  : <>No approved vendors yet. <Link href="/vendors/new" style={{ color: "#b3261e", fontWeight: 600, textDecoration: "underline" }}>Add one first.</Link></>
+                }
               </div>
             ) : (
               <select name="vendorId" required style={{ ...INPUT, appearance: "none" }}>
