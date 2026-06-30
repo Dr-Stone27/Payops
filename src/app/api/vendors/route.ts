@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "This bank account is already linked to an approved vendor." }, { status: 409 });
   }
 
-  const { cacName, nubanName } = simulateKybLookup(legalName, nuban);
-  const score = computeJaroWinkler(cacName, nubanName);
+  const { cacName, nubanName, fixedScore } = simulateKybLookup(legalName, nuban);
+  const score = fixedScore ?? computeJaroWinkler(cacName, nubanName);
   const { status } = getKybDecision(score);
 
   const vendor = await prisma.vendor.create({

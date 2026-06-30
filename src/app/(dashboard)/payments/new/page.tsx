@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createPayment } from "@/actions/payments";
+import { getVendors } from "@/actions/vendors";
 import { InfoTooltip } from "@/components/Tooltip";
 
 interface Vendor { id: string; legalName: string; kybStatus: string; nubanLast4: string; bankName: string; }
@@ -18,7 +19,7 @@ export default function NewPaymentPage() {
   const [hasFile, setHasFile] = useState(false);
 
   useEffect(() => {
-    fetch("/api/vendors").then(r => r.json()).then(setVendors);
+    getVendors().then(data => setVendors(data));
   }, []);
 
   const approvedVendors = vendors.filter(v => v.kybStatus === "approved");

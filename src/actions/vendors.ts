@@ -11,6 +11,16 @@ function cuid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+export async function getVendors() {
+  const session = await getSession();
+  if (!session) return [];
+  return prisma.vendor.findMany({
+    where: { businessId: session.businessId },
+    select: { id: true, legalName: true, kybStatus: true, nubanLast4: true, bankName: true },
+    orderBy: { legalName: "asc" },
+  });
+}
+
 export async function addVendor(formData: FormData) {
   const session = await getSession();
   if (!session) return { error: "Not authenticated." };
@@ -35,8 +45,8 @@ export async function addVendor(formData: FormData) {
     return { error: "This bank account is already linked to an approved vendor." };
   }
 
-  const { cacName, nubanName } = simulateKybLookup(legalName, nuban);
-  const score = computeJaroWinkler(cacName, nubanName);
+  const { cacName, nubanName, fixedScore } = simulateKybLookup(legalName, nuban);
+  const score = fixedScore ?? computeJaroWinkler(cacName, nubanName);
   const { status } = getKybDecision(score);
 
   const vendor = await prisma.vendor.create({

@@ -43,18 +43,18 @@ export function encryptNuban(nuban: string): string {
   return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted.toString("hex")}`;
 }
 
-// Simulates CAC + NUBAN lookup for demo — returns plausible names
+// Simulates CAC + NUBAN lookup for demo. fixedScore bypasses Jaro-Winkler for
+// seeded NUBANs — avoids normalization stripping suffixes and changing the outcome.
 export function simulateKybLookup(
   legalName: string,
   nuban: string
-): { cacName: string; nubanName: string } {
+): { cacName: string; nubanName: string; fixedScore?: number } {
   const seed = nuban.slice(-4);
-  // Deterministic simulation: same last 4 digits always returns same result
-  const scenarios: Record<string, { cacName: string; nubanName: string }> = {
-    "1234": { cacName: legalName, nubanName: legalName },
-    "5678": { cacName: legalName, nubanName: legalName.toUpperCase() + " LIMITED" },
-    "9999": { cacName: legalName, nubanName: "DIFFERENT COMPANY NAME LTD" },
-    "0000": { cacName: legalName, nubanName: legalName },
+  const scenarios: Record<string, { cacName: string; nubanName: string; fixedScore?: number }> = {
+    "1234": { cacName: legalName, nubanName: legalName, fixedScore: 1.0 },
+    "5678": { cacName: legalName, nubanName: legalName + " GLOBAL ASSOCIATES", fixedScore: 0.78 },
+    "9999": { cacName: legalName, nubanName: "DIFFERENT COMPANY NAME LTD", fixedScore: 0.42 },
+    "0000": { cacName: legalName, nubanName: legalName, fixedScore: 1.0 },
   };
   return scenarios[seed] ?? { cacName: legalName, nubanName: legalName };
 }
