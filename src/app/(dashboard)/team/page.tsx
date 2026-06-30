@@ -65,7 +65,9 @@ export default async function TeamPage() {
                     <span style={{ fontSize: 12, fontWeight: 600, color: roleFg(m.role) }}>{roleLabel(m.role)}</span>
                   </td>
                   <td style={{ padding: "12px 12px" }}>
-                    {m.pinHash ? (
+                    {m.role === "maker" ? (
+                      <span style={{ fontSize: 12, color: "#a0aab4" }}>Not required</span>
+                    ) : m.pinHash ? (
                       <span style={{ fontSize: 12, fontWeight: 600, color: "#0e7a5a", display: "inline-flex", alignItems: "center", gap: 5 }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                         Set
