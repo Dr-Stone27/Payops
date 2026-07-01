@@ -1,8 +1,9 @@
 # Retrospective: PayOps Control Tower
 
 **Capstone Deliverable:** 6 — Retrospective
-**Document Status:** v1.0 — Panel-ready
+**Document Status:** v1.1 — Panel-ready
 **Last updated:** 2026-07-01
+**v1.1 adds §5:** post-build product audit, the strategic reframe (Watchtower / assurance-over-existing-rails), and the build plan.
 
 ---
 
@@ -139,3 +140,29 @@ This changes the go-to-market calculus materially. The original framing was: Pay
 This was not visible at the start because it required reading the current regulatory environment, not the 2020 framework documents. The compliance summary identifies it explicitly in Section 5 and flags it as the single most operationally impactful recent directive for a PSSP launching today. But finding it required active research rather than framework knowledge — and that research happened late in the build, not before the architecture was designed.
 
 The architecture is not broken by this discovery. PayOps's compliance review queue and real-time trigger evaluation are, as the compliance summary notes, the correct architectural foundation for NRS TMS integration. The direction of travel is right. The timeline to compliance is more compressed than initially anticipated.
+
+---
+
+## 5. Post-Build Product Audit & Strategic Reframe (v1.1 — 2026-07-01)
+
+After v1.0, the product went through a second, deeper pass: a connective audit of the deployed build (code + live UI), fresh market research, and a positioning reframe. Durable outputs live in `.claude/context/` (product model, audit, market research v2, improvement plan, pitch readiness) and `BUILD.md`.
+
+### What the deeper audit found (beyond §1)
+- **The serverless settlement fix left a control gap.** Making settlement synchronous — the correct fix for the fire-and-forget failure in §3 — took a shortcut (`settleDirectly`) that skips the signed-webhook reconciliation entirely: no `WebhookEvent`, no NIP-tolerance check, so `AMOUNT_MISMATCH` is unreachable through the actual product. The HMAC/NIP webhook exists but only Postman reaches it. Fix: route approval through a shared reconciliation function, still synchronous / Vercel-safe.
+- **The compliance threshold was 10× too low.** `HIGH_VALUE` fired at ₦500,000, not the ₦5,000,000 the code comment, the UI copy, and every deliverable claim — a digit-grouping typo (`500_000_00`). The same character as the NIP-fee error in §3: precise, well-formatted, wrong.
+- **The dashboard is a ledger, not a control tower.** It shows payments already made; a finance lead opening a product called a *Control Tower* needs "what needs my approval / what's at risk / recent control events." This single change moves it from a log to a control room.
+- **Dead surface.** Four of six exception categories, a "Settled" filter, and an "Acknowledge" button were unreachable or non-functional — depth the product could not actually produce.
+- **Naming split, now resolved.** The live app is "Watchtower"; the deliverables said "PayOps Control Tower." The product is **Watchtower**.
+
+### The strategic question, answered honestly
+The sharper challenge raised mid-review: if control + verification + audit is a *feature* inside Duplo / Ramp / Bujeti, why would anyone pay for it standalone? Research answered it:
+- It is a paid, standalone category — **Positive Pay** (a bank service), **BILL "AP Controls"**, HighRadius — and best practice mandates **separation of duties** (the party that moves money cannot be its own auditor).
+- The pain is large and specific: **₦52.26bn lost to fraud in Nigeria in 2024** (+196% over five years); vendor-account / BEC fraud is the marquee vector, and the prescribed defense is exactly verify-the-account + dual-approval.
+- The wedge incumbents structurally cannot take: **assurance without migration** — controls + audit on top of the bank accounts an SME already uses (they all require moving your treasury onto their rails).
+- **Reframe:** Watchtower = the *independent* payment-controls & audit layer over existing rails, not a parallel place to move money. The prior build betrayed this by behaving like a walled garden; the fix is framing now and real bank/PSP integration on the roadmap.
+
+### A fourth "where AI fell short" (this cycle)
+The first market-research pass jumped straight to "sharpen the spine" and skipped the harder question — *is this a product or a feature, and why would anyone pay?* It produced a fluent landscape that dodged the thing that mattered: the same failure mode as §3 — the AI answered the question asked, not the question that mattered. It took the PM pushing back to force the interrogation. The research prompt was then hardened to make that interrogation a mandatory first step (`.claude/prompts/02-market-research.md`).
+
+### Build plan
+Prioritised fixes with acceptance criteria are in `.claude/context/improvement-plan-phase3.md` and `BUILD.md`. Four decisions were confirmed: ₦5M threshold; rebuild settlement through shared **synchronous** reconciliation (serverless-safe); cut `STATUS_UNKNOWN`; wire `Acknowledge` as a real resolve action. §2's next-sprint priorities still hold, with **dashboard-as-control-tower** added as a pitch-critical item.
