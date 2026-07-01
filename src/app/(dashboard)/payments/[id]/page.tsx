@@ -232,7 +232,7 @@ export default function PaymentDetailPage() {
             <strong>Trigger:</strong> {TRIGGER_LABELS[payment.complianceTrigger ?? ""] ?? payment.complianceTrigger}
           </div>
           {error && <div style={{ marginBottom: 12, padding: "9px 12px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 8, fontSize: 12.5, color: "#b3261e" }}>{error}</div>}
-          {isChecker && !isComplianceResolver ? (
+          {isChecker && !isMaker && !isComplianceResolver ? (
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => handleCompliance("clear")} disabled={loading}
                 style={{ flex: 1, height: 40, background: "#e07235", color: "#fff", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.7 : 1 }}>
@@ -244,7 +244,11 @@ export default function PaymentDetailPage() {
               </button>
             </div>
           ) : (
-            <div style={{ fontSize: 12.5, color: "#8a4010" }}>Awaiting Checker review. You created this request and cannot action the compliance review.</div>
+            <div style={{ fontSize: 12.5, color: "#8a4010" }}>
+              {isMaker
+                ? "You created this request and cannot action the compliance review."
+                : "Awaiting Checker review."}
+            </div>
           )}
         </div>
       )}

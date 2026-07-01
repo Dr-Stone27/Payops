@@ -213,6 +213,10 @@ export async function clearComplianceReview(paymentId: string, decision: "clear"
     return { error: "Payment is not in compliance review." };
   }
 
+  if (payment.makerId === session.userId) {
+    return { error: "You cannot action a compliance review for a payment you created." };
+  }
+
   if (decision === "clear") {
     await prisma.paymentRequest.update({
       where: { id: paymentId },
