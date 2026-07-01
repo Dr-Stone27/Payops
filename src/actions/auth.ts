@@ -121,7 +121,8 @@ export async function login(formData: FormData) {
     console.error("[login] Audit log error:", e);
   }
 
-  return { success: true };
+  const needsPin = (user.role === "owner" || user.role === "admin") && !user.pinHash;
+  return { success: true, needsPin };
 }
 
 export async function logout() {

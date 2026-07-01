@@ -31,7 +31,7 @@ export default function LoginPage() {
     setError("");
     const result = await login(new FormData(e.currentTarget));
     if (result?.error) { setError(result.error); setLoading(false); return; }
-    if (result?.success) { window.location.href = "/dashboard"; }
+    if (result?.success) { window.location.href = result.needsPin ? "/setup-pin" : "/dashboard"; }
   }
 
   return (
