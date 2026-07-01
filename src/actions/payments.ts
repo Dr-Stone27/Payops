@@ -250,6 +250,20 @@ export async function clearComplianceReview(paymentId: string, decision: "clear"
   return { success: true };
 }
 
+export async function retryDispatch(paymentId: string) {
+  const session = await getSession();
+  if (!session) return { error: "Not authenticated." };
+
+  const payment = await prisma.paymentRequest.findFirst({
+    where: { id: paymentId, businessId: session.businessId, status: "processing" },
+  });
+  if (!payment) return { error: "Payment not found or not in processing state." };
+
+  await dispatchToPsp(paymentId, payment.amount, session.businessId).catch(console.error);
+  revalidatePath(`/payments/${paymentId}`);
+  return { success: true };
+}
+
 async function dispatchToPsp(paymentId: string, amountKobo: number, businessId: string) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
