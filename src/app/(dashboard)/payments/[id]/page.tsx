@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { approvePayment, rejectPayment, clearComplianceReview, retryDispatch, cancelPayment } from "@/actions/payments";
+import { approvePayment, rejectPayment, clearComplianceReview, retryDispatch, retryException, cancelPayment } from "@/actions/payments";
 import { STATUS_BADGE, avatarColor, getInitials } from "@/lib/design";
 import { InfoTooltip } from "@/components/Tooltip";
 
@@ -214,18 +214,33 @@ export default function PaymentDetailPage() {
 
       {/* Exception */}
       {payment.status === "exception_queue" && (
-        <div style={{ background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 13, padding: "14px 18px", marginBottom: 14, display: "flex", alignItems: "flex-start", gap: 12 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: "#dc4338", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#a32820" }}>Exception: {payment.exceptionCategory?.replace(/_/g, " ")}</div>
-            <div style={{ fontSize: 12, color: "#b3261e", marginTop: 3 }}>
-              {payment.exceptionCategory === "PSP_FAILURE" && "The PSP returned a failure status. Retry from the Exception Queue or cancel this request."}
-              {payment.exceptionCategory === "AMOUNT_MISMATCH" && `Settled amount (${formatNaira(payment.settledAmount ?? 0)}) differs from invoice outside the NIP tolerance band. Manual reconciliation required.`}
-              {payment.exceptionCategory === "STATUS_UNKNOWN" && "No settlement webhook received within 48 hours. Check with your PSP."}
-              {payment.exceptionCategory === "COMPLIANCE_REVIEW_TIMEOUT" && "Compliance review was not completed within the required window."}
+        <div style={{ background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 13, padding: "16px 18px", marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "#dc4338", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
             </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#a32820" }}>Exception: {payment.exceptionCategory?.replace(/_/g, " ")}</div>
+              <div style={{ fontSize: 12, color: "#b3261e", marginTop: 3 }}>
+                {payment.exceptionCategory === "PSP_FAILURE" && "The PSP returned a failure status. No funds left your account — you can retry or cancel."}
+                {payment.exceptionCategory === "AMOUNT_MISMATCH" && `Settled amount (${formatNaira(payment.settledAmount ?? 0)}) differs from the invoice outside the NIP tolerance band. Cancel and re-raise if needed.`}
+                {payment.exceptionCategory === "STATUS_UNKNOWN" && "No settlement confirmation received within 48 hours. Retry to re-dispatch or cancel."}
+                {payment.exceptionCategory === "COMPLIANCE_REVIEW_TIMEOUT" && "Compliance review was not completed within the required window. Cancel and re-submit."}
+              </div>
+            </div>
+          </div>
+          {error && <div style={{ marginBottom: 10, padding: "9px 12px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 8, fontSize: 12.5, color: "#b3261e" }}>{error}</div>}
+          <div style={{ display: "flex", gap: 8 }}>
+            {(payment.exceptionCategory === "PSP_FAILURE" || payment.exceptionCategory === "STATUS_UNKNOWN") && isChecker && (
+              <button onClick={async () => { setLoading(true); setError(""); const r = await retryException(id); if (r?.error) { setError(r.error); setLoading(false); } else { load(); setLoading(false); } }} disabled={loading}
+                style={{ height: 36, padding: "0 14px", background: "#dc4338", color: "#fff", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.6 : 1 }}>
+                {loading ? "…" : "Retry payment"}
+              </button>
+            )}
+            <button onClick={handleCancel} disabled={loading}
+              style={{ height: 36, padding: "0 14px", background: "transparent", color: "#b3261e", border: "1px solid #f1c5c1", borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.6 : 1 }}>
+              {loading ? "…" : "Cancel request"}
+            </button>
           </div>
         </div>
       )}

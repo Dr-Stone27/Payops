@@ -157,8 +157,7 @@ export async function approvePayment(paymentId: string, pin: string) {
     outcome: "processing",
   });
 
-  // Await PSP dispatch — fire-and-forget doesn't survive Vercel serverless lifecycle
-  await dispatchToPsp(paymentId, payment.amount, session.businessId).catch(console.error);
+  await settleDirectly(paymentId, payment.amount, session.businessId);
 
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
@@ -263,29 +262,27 @@ export async function retryDispatch(paymentId: string) {
   });
   if (!payment) return { error: "Payment not found or not in processing state." };
 
-  // Settle directly in DB — avoids the unreliable self-referential HTTP call
-  const txRef = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-  const success = Math.random() > 0.2;
+  await settleDirectly(paymentId, payment.amount, session.businessId, true);
+  revalidatePath(`/payments/${paymentId}`);
+  return { success: true };
+}
 
-  await prisma.paymentRequest.update({
-    where: { id: paymentId },
-    data: {
-      status: success ? "reconciled" : "exception_queue",
-      transactionReference: txRef,
-      settledAmount: success ? payment.amount : 0,
-      version: { increment: 1 },
-      ...(success ? {} : { exceptionCategory: "PSP_FAILURE" }),
-    },
+export async function retryException(paymentId: string) {
+  const session = await getSession();
+  if (!session) return { error: "Not authenticated." };
+  if (!["owner", "admin"].includes(session.role)) {
+    return { error: "Only Checkers can retry failed payments." };
+  }
+
+  const payment = await prisma.paymentRequest.findFirst({
+    where: { id: paymentId, businessId: session.businessId, status: "exception_queue" },
   });
+  if (!payment) return { error: "Payment not found or not in exception queue." };
+  if (payment.exceptionCategory !== "PSP_FAILURE" && payment.exceptionCategory !== "STATUS_UNKNOWN") {
+    return { error: "Only PSP failures and status-unknown payments can be retried." };
+  }
 
-  await log({
-    businessId: session.businessId,
-    paymentId,
-    action: success ? "PAYMENT_RECONCILED" : "PSP_FAILURE",
-    detail: `Simulated retry. TxRef: ${txRef}.`,
-    outcome: success ? "reconciled" : "exception_queue",
-  });
-
+  await settleDirectly(paymentId, payment.amount, session.businessId, true);
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
 }
@@ -327,35 +324,26 @@ export async function cancelPayment(paymentId: string) {
   return { success: true };
 }
 
-async function dispatchToPsp(paymentId: string, amountKobo: number, businessId: string) {
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+async function settleDirectly(paymentId: string, amountKobo: number, businessId: string, alwaysSucceed = false) {
+  const success = alwaysSucceed || Math.random() > 0.2;
   const txRef = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
-  // Simulate: 80% success, 20% failure
-  const outcome = Math.random() > 0.2 ? "SUCCESS" : "FAILED";
-  const settledAmount = outcome === "SUCCESS" ? amountKobo : 0;
-
-  const payload = {
-    paymentId,
-    transactionReference: txRef,
-    settlementStatus: outcome,
-    settledAmount,
-    bankReference: `NIBSS-${Date.now()}`,
-    businessId,
-  };
-
-  const secret = process.env.PSP_WEBHOOK_SECRET || "psp-webhook-dev-secret";
-  const body = JSON.stringify(payload);
-  const { createHmac } = await import("crypto");
-  const sig = createHmac("sha256", secret).update(body).digest("hex");
-
-  await fetch(`${baseUrl}/api/webhooks/settlement`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-PSP-Signature": sig,
+  await prisma.paymentRequest.update({
+    where: { id: paymentId },
+    data: {
+      status: success ? "reconciled" : "exception_queue",
+      transactionReference: txRef,
+      settledAmount: success ? amountKobo : 0,
+      version: { increment: 1 },
+      ...(success ? {} : { exceptionCategory: "PSP_FAILURE" }),
     },
-    body,
+  });
+
+  await log({
+    businessId,
+    paymentId,
+    action: success ? "PAYMENT_RECONCILED" : "PSP_FAILURE",
+    detail: `${success ? "Settled" : "PSP returned failure"}. TxRef: ${txRef}.`,
+    outcome: success ? "reconciled" : "exception_queue",
   });
 }
