@@ -79,32 +79,47 @@ export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    include: { business: true },
-  });
-
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    return { error: "Invalid email or password." };
+  let user;
+  try {
+    user = await prisma.user.findUnique({ where: { email } });
+  } catch (e) {
+    console.error("[login] DB lookup error:", e);
+    return { error: "Database error — please try again in a moment." };
   }
 
-  const sessionId = cuid();
-  const token = await createSession({
-    sessionId,
-    userId: user.id,
-    businessId: user.businessId,
-    role: user.role,
-    email: user.email,
-    fullName: user.fullName,
-  });
+  if (!user) return { error: "Invalid email or password." };
 
-  await setSessionCookie(token);
-  await log({
-    businessId: user.businessId,
-    userId: user.id,
-    action: "LOGIN",
-    outcome: "success",
-  });
+  let passwordMatch = false;
+  try {
+    passwordMatch = await bcrypt.compare(password, user.passwordHash);
+  } catch (e) {
+    console.error("[login] bcrypt error:", e);
+    return { error: "Authentication error — please try again." };
+  }
+  if (!passwordMatch) return { error: "Invalid email or password." };
+
+  try {
+    const sessionId = cuid();
+    const token = await createSession({
+      sessionId,
+      userId: user.id,
+      businessId: user.businessId,
+      role: user.role,
+      email: user.email,
+      fullName: user.fullName,
+    });
+    await setSessionCookie(token);
+  } catch (e) {
+    console.error("[login] Session creation error:", e);
+    return { error: "Failed to create session — please try again." };
+  }
+
+  // Non-fatal: don't let audit log failure block login
+  try {
+    await log({ businessId: user.businessId, userId: user.id, action: "LOGIN", outcome: "success" });
+  } catch (e) {
+    console.error("[login] Audit log error:", e);
+  }
 
   redirect("/dashboard");
 }
