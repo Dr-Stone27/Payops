@@ -1,8 +1,9 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 function createPrisma() {
-  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
+  const url = process.env.DATABASE_URL || "file:./prisma/dev.db";
+  const adapter = new PrismaLibSql({ url });
   return new PrismaClient({ adapter });
 }
 
