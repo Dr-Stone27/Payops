@@ -22,8 +22,8 @@ Everything below serves that sentence. Anything that doesn't is demoted behind i
 | 2 | HIGH_VALUE 10× too low | **REBUILD** | Fix `compliance.ts:3` to ₦5,000,000 (`500_000_000` kobo). Surface the trigger reason **at payment creation** ("This will need a compliance review because…"), not just after. Align all copy (`compliance/page.tsx`, `payment/[id]`, new-payment form) to the real number. Acceptance: ₦4.9M → no review; ₦5M → review, with maker warned pre-submit. | P1 transparent routing | S + M | 1 |
 | 3 | Live settlement bypasses signed webhook + NIP | **REBUILD** | Make `approvePayment` dispatch **asynchronously** to the real signed-webhook route (HMAC + dedup + NIP), instead of `settleDirectly`. Result: advertised path = real path; `processing`/polling UX comes alive; `AMOUNT_MISMATCH` becomes demonstrable. Acceptance: an approved payment sits in `processing`, then flips to `reconciled`/exception via a `WebhookEvent`; a seeded off-by-fee amount yields `AMOUNT_MISMATCH`. | P4 real-time status | M–L | 1 |
 | 7 | No server-side negative-amount guard | **REBUILD** | `createPayment`: reject `amountKobo <= 0` server-side. Acceptance: negative/zero rejected by the action regardless of client. | — (baseline P07/P13) | S | 1 |
-| 4a | Dead "Settled" filter + no-op "Acknowledge" button | **CUT** | Remove the `Settled` filter tab (nothing rests there); make "Acknowledge" a real action (mark exception resolved + audit) or remove it. Acceptance: no control leads to a dead end. | P5 show only real states | S | 1 |
-| 4b | Unreachable exception categories | **SIMPLIFY / decide** | After #3, `AMOUNT_MISMATCH`/`ORPHANED` are reachable. `PARTIAL_TRANCHE_SETTLEMENT` → **CUT** (no tranching). `STATUS_UNKNOWN` → build a 48h timeout job **or CUT** (product decision below). Acceptance: every category shown is producible. | P5 | M | 2 |
+| 4a | Dead "Settled" filter + no-op "Acknowledge" button | **CUT + REBUILD** | Remove the `Settled` filter tab (nothing rests there); **wire "Acknowledge" to mark the exception resolved + write an audit entry** (owner-confirmed — not removed). Acceptance: no control leads to a dead end; Acknowledge changes state + logs. | P5 show only real states | S | 1 |
+| 4b | Unreachable exception categories | **SIMPLIFY** | After #3, `AMOUNT_MISMATCH`/`ORPHANED` are reachable. `PARTIAL_TRANCHE_SETTLEMENT` → **CUT** (no tranching). `STATUS_UNKNOWN` → **CUT** (owner-confirmed; no 48h job for MVP). Acceptance: every category shown is producible. | P5 | S | 2 |
 | 5 | Duplicate-NUBAN control bypassable | **REBUILD** | Broaden the check to **all** vendor records (drop `kybStatus:"approved"` filter, `vendors.ts:42`) and re-check at `approveVendor`. Acceptance: two vendors with the same NUBAN cannot both reach `approved`. | P6 verification integrity | S | 2 |
 | 6 | `COMPLIANCE_REVIEW_TIMEOUT` mislabel | **REBUILD** | Manual Block → new category `COMPLIANCE_BLOCKED` with honest copy ("A checker blocked this payment"); reserve `TIMEOUT` for an actual timeout. Acceptance: blocked payment reads as blocked, not timed-out. | P2 honest audit story | S | 2 |
 | 4c | Reconciled copy overstates NIP | **SIMPLIFY** | Fixed automatically once #3 lands (NIP really runs). Until then, soften copy. | — | S | 2 |
@@ -52,11 +52,11 @@ Everything below serves that sentence. Anything that doesn't is demoted behind i
 - **CUT:** `Settled` filter tab; `PARTIAL_TRANCHE_SETTLEMENT` exception category; (conditionally) `STATUS_UNKNOWN` if the timeout job isn't built.
 - **DEMOTE:** nothing structural — the spine already dominates the IA; the work is making it honest, not reordering it.
 
-## Product decisions still needed (not resolved on your behalf)
-1. **HIGH_VALUE threshold** — confirm ₦5,000,000 is the intended number.
-2. **Settlement rebuild vs narrow-the-claim** — rebuild the async webhook path (recommended, authentic, medium effort) *or* honestly narrow the pitch to "simulated settlement" and prune the webhook/NIP claims. Effort-vs-authenticity call.
-3. **`STATUS_UNKNOWN`** — build a 48h timeout job, or cut the category.
-4. **"Acknowledge"** — make it a real resolve action, or remove it.
+## Product decisions — RESOLVED (owner-confirmed 2026-07-01)
+1. **HIGH_VALUE threshold = ₦5,000,000.** ✓ Fix `compliance.ts:3` to `500_000_000` kobo.
+2. **Settlement → REBUILD the async webhook path.** ✓ Route approval through the real signed-webhook (HMAC + dedup + NIP); no narrowing of the claim.
+3. **`STATUS_UNKNOWN` → CUT.** ✓ Remove the category from the exceptions UI; do not build a 48h timeout job for MVP.
+4. **"Acknowledge" → make it a REAL resolve action.** ✓ Wire it to mark the exception resolved + write an audit entry (not a static span).
 
 ---
 

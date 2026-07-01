@@ -57,4 +57,4 @@ Problem (fraud + fragmentation, cited) → why existing tools don't fit SMEs (mi
 - **Tier 2:** prune/settle exception states · duplicate-NUBAN integrity · block relabel · copy accuracy.
 - **Tier 3:** banner · palette · real IDs · audit-immutability (disclose now).
 - **Roadmap (post-capstone):** NIBSS name-enquiry + bank/PSP integration to make "over existing rails" real.
-- **Open product decisions still owner's call** (in Phase 3): confirm ₦5M threshold · settlement rebuild vs narrow-claim · STATUS_UNKNOWN build-or-cut · Acknowledge wire-or-remove.
+- **Product decisions — RESOLVED (2026-07-01):** HIGH_VALUE = ₦5,000,000 · settlement = rebuild async webhook · STATUS_UNKNOWN = cut · Acknowledge = wire as a real resolve action. Package is fully locked for build.
