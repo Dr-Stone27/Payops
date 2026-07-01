@@ -1,6 +1,6 @@
 # Watchtower
 
-Payment operations orchestration layer for Nigerian SMEs. Built as a capstone submission for the ProductDive Fintech PM Program (Option C — Own Problem).
+The control & audit layer on top of the accounts Nigerian SMEs already use. Built as a capstone submission for the ProductDive Fintech PM Program (Option C — Own Problem).
 
 Watchtower is a **non-funds-holding** workflow product that gives finance teams one workspace to verify vendors, approve payment requests, track settlement, and reconcile invoices — without needing a full ERP. It orchestrates the audit trail around money that moves through a licensed PSP partner.
 
@@ -13,7 +13,7 @@ This repository contains a full-stack working prototype demonstrating the core p
 - **Vendor KYB gate** — CAC + NUBAN name-matching via Jaro-Winkler algorithm
 - **Maker-Checker authorization** — four-eyes rule enforced server-side with PIN approval
 - **Compliance review queue** — automatic routing for high-value (≥ ₦5M), duplicate invoice, ambiguous KYB match, and repeated PSP failure triggers
-- **Simulated PSP dispatch** — HMAC-SHA256 signed webhook, 80/20 success/failure simulation
+- **Simulated PSP dispatch** — 80/20 success/failure simulation reconciled in-request through the same logic as the HMAC-SHA256 webhook seam kept for a real PSP
 - **Settlement reconciliation** — NIP fee tolerance bands (CBN Guide to Bank Charges, current: ₦0 / max ₦10 / max ₦50)
 - **Exception queue** — PSP_FAILURE, AMOUNT_MISMATCH, ORPHANED_SETTLEMENT
 - **Immutable audit log** — every action logged with actor, timestamp, and outcome
@@ -77,13 +77,13 @@ DATABASE_URL="file:./prisma/dev.db"
 # JWT session signing secret — change this in production
 SESSION_SECRET="payops-dev-secret-change-in-production"
 
-# PSP webhook HMAC signing secret — must match what dispatchToPsp uses
+# PSP webhook HMAC signing secret — used to verify inbound settlement webhooks
 PSP_WEBHOOK_SECRET="psp-webhook-dev-secret"
 
 # NUBAN encryption/hashing key — change this in production
 NUBAN_SECRET="nuban-dev-secret"
 
-# Required for production: the webhook self-call in dispatchToPsp needs the live URL
+# Public base URL of the deployment
 NEXT_PUBLIC_BASE_URL="https://your-vercel-url.vercel.app"
 ```
 
@@ -144,10 +144,12 @@ The four-eyes rule is enforced server-side:
 
 ### Step 8 — Settlement (automatic)
 
-After approval, the payment enters `processing`. The app simulates a PSP dispatch (2-second delay) with an 80% success / 20% failure rate and posts a signed webhook to itself. The payment detail page polls every 2 seconds and updates automatically.
+Approval dispatches to the simulated PSP and reconciles the settlement within the same request — creating a real `WebhookEvent` record and running the NIP tolerance check, exactly as a live PSP webhook would. (Settlement resolves synchronously because Vercel's serverless lifecycle kills background work; a real async PSP webhook is a roadmap item. The external HMAC-verified webhook endpoint remains as the integration seam.)
 
-- **Success (80%)** → payment moves to `reconciled ✓`
-- **Failure (20%)** → payment moves to `exception_queue` with category `PSP_FAILURE`
+- **Success (80%)** → settlement matches within NIP tolerance → `reconciled ✓`
+- **Failure (20%)** → `exception_queue` with category `PSP_FAILURE`
+- **Invoice number starting `EXC-`** → forces a PSP failure (demo lever)
+- **Invoice number starting `MIS-`** → forces a settlement outside NIP tolerance → `exception_queue / AMOUNT_MISMATCH` (demo lever)
 
 ### Step 9 — Audit Log
 
@@ -255,8 +257,12 @@ prisma/
 
 ### `src/actions/payments.ts` — Payment Authorization
 
-- **`approvePayment`** — validates role → checks PIN lockout → fetches payment → four-eyes checks (maker + compliance resolver) → verifies PIN → atomic `updateMany` with version check → fire-and-forget PSP dispatch
-- **`dispatchToPsp`** — async, 2s delay, generates HMAC-SHA256 signed webhook, 80% SUCCESS / 20% FAILED simulation
+- **`approvePayment`** — validates role → checks PIN lockout → fetches payment → four-eyes checks (maker + compliance resolver) → verifies PIN → atomic `updateMany` with version check → awaits the simulated PSP dispatch in-request (serverless-safe)
+
+### `src/lib/settlement.ts` — Shared Reconciliation
+
+- **`reconcileSettlement`** — the single settlement path: dedup by `transactionReference` → orphan handling → `WebhookEvent` record → NIP tolerance check → `reconciled` / `AMOUNT_MISMATCH` / `PSP_FAILURE` + audit entry. Used by both the simulated dispatch and the external webhook.
+- **`dispatchSimulatedSettlement`** — 80% SUCCESS / 20% FAILED simulation; `EXC-` invoice prefix forces failure, `MIS-` forces an out-of-tolerance settlement
 
 ### `src/app/api/webhooks/settlement/route.ts` — Settlement Webhook
 
@@ -297,7 +303,8 @@ A full Postman collection is included: `payops-postman-collection.json`
 
 | Limitation | Reason | Post-MVP path |
 |---|---|---|
-| PSP is fully simulated | No live PSP partner in MVP | Swap `dispatchToPsp` for a real PSP SDK call |
+| PSP is fully simulated | No live PSP partner in MVP | Point a real PSP at the HMAC webhook endpoint; replace `dispatchSimulatedSettlement` with the PSP SDK call |
+| Settlement resolves in-request (no async dwell) | Vercel serverless kills post-response work | Real async settlement via PSP webhook + queue/poller |
 | CAC + NUBAN APIs are simulated | Deterministic by NUBAN last 4 digits | Wire to Smile ID / Dojah / NIBSS |
 | No email notifications | Out of scope for prototype | Add Resend / Postmark on approval and settlement events |
 | No NFIU STR filing workflow | Compliance trigger flags internally only | Build STR submission flow post-MVP |

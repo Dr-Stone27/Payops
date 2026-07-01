@@ -183,8 +183,8 @@ export default function PaymentDetailPage() {
         <div style={{ background: "#e6f0fd", border: "1px solid #b5d0f8", borderRadius: 13, padding: "14px 18px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12 }}>
           <span className="wt-spin" style={{ display: "inline-block", width: 18, height: 18, border: "2.5px solid rgba(29,93,164,.3)", borderTopColor: "#3b82f6", borderRadius: "50%", flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1d3d5c" }}>Dispatched to PSP</div>
-            <div style={{ fontSize: 12, color: "#3b6fa0", marginTop: 3 }}>Awaiting settlement webhook… This page updates automatically.</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1d3d5c" }}>Dispatched to your PSP partner</div>
+            <div style={{ fontSize: 12, color: "#3b6fa0", marginTop: 3 }}>Settlement is being confirmed. Watchtower never holds your funds — the transfer moves through your licensed PSP. This page updates automatically.</div>
           </div>
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
             <button onClick={async () => { setLoading(true); await retryDispatch(id); load(); setLoading(false); }} disabled={loading}
@@ -207,7 +207,7 @@ export default function PaymentDetailPage() {
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#1a6b52" }}>Reconciled</div>
-            <div style={{ fontSize: 12, color: "#2a8a68", marginTop: 3 }}>Settlement matched invoice within NIP charge tolerance. No action required.</div>
+            <div style={{ fontSize: 12, color: "#2a8a68", marginTop: 3 }}>Your PSP partner confirmed settlement, and it matched the invoice within NIP charge tolerance. No action required.</div>
           </div>
         </div>
       )}
