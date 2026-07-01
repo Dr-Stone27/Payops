@@ -75,7 +75,9 @@ export async function addVendor(formData: FormData) {
   });
 
   revalidatePath("/vendors");
-  redirect("/vendors");
+  // Land on the vendor's detail page so the maker sees the KYB outcome
+  // (score, match verdict, next step) instead of a silent list redirect.
+  redirect(`/vendors/${vendor.id}`);
 }
 
 export async function approveVendor(vendorId: string, justification: string) {

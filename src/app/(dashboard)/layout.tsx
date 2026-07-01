@@ -7,6 +7,7 @@ import { TopBar } from "./TopBar";
 import { logout } from "@/actions/auth";
 import { WalkthroughProvider } from "@/context/WalkthroughContext";
 import { WalkthroughBanner } from "@/components/WalkthroughBanner";
+import { ToastProvider } from "@/components/ui/Toast";
 
 function LighthouseIcon() {
   return (
@@ -34,6 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const business = await prisma.business.findUnique({ where: { id: session.businessId } });
 
   return (
+    <ToastProvider>
     <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
 
       {/* ── Sidebar ── */}
@@ -97,5 +99,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </WalkthroughProvider>
       </div>
     </div>
+    </ToastProvider>
   );
 }

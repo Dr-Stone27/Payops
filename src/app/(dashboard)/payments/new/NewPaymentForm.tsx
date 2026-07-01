@@ -96,6 +96,12 @@ export default function NewPaymentForm({ approvedVendors, pendingCount }: { appr
             </label>
             <input name="amount" type="number" min="1" step="0.01" required value={amountNaira}
               onChange={e => setAmountNaira(e.target.value)} placeholder="500000" style={INPUT} />
+            {parseFloat(amountNaira) > 0 && (
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: "#0e7a5a", marginTop: 6 }}>
+                {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(parseFloat(amountNaira))}
+                <span style={{ fontWeight: 400, color: "#8a97a6", marginLeft: 7 }}>— confirm this matches the invoice</span>
+              </div>
+            )}
           </div>
 
           <div style={{ marginBottom: 14 }}>

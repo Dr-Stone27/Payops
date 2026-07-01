@@ -5,6 +5,8 @@ import { avatarColor, getInitials } from "@/lib/design";
 import Link from "next/link";
 import AcknowledgeButton from "./AcknowledgeButton";
 import RetryButton from "./RetryButton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CheckCircle2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -53,16 +55,13 @@ export default async function ExceptionsPage() {
       </div>
 
       {exceptions.length === 0 ? (
-        <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, padding: "52px 24px", textAlign: "center" }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#e6faf4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0e7a5a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 6 9 17l-5-5"/>
-            </svg>
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#3f4d5a" }}>No exceptions</div>
-          <div style={{ fontSize: 12.5, color: "#98a3b0", margin: "6px auto 0", maxWidth: 400, lineHeight: 1.55 }}>
-            Payments that fail, time out, or need attention will appear here with plain-language guidance on what to do next.
-          </div>
+        <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13 }}>
+          <EmptyState
+            icon={CheckCircle2}
+            tone="positive"
+            title="No open exceptions"
+            body="Payments that fail or mismatch will appear here with plain-language guidance on what to do next. Right now, everything has settled cleanly."
+          />
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

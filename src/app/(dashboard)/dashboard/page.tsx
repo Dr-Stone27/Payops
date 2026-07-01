@@ -84,6 +84,20 @@ export default async function DashboardPage() {
     ? complianceItems.filter(p => p.makerId !== session.userId).length
     : 0;
 
+  const attentionTotal = isChecker
+    ? await prisma.paymentRequest.count({
+        where: {
+          ...biz,
+          status: "pending_approval",
+          makerId: { not: session.userId },
+          OR: [
+            { complianceReviewResolvedBy: null },
+            { complianceReviewResolvedBy: { not: session.userId } },
+          ],
+        },
+      })
+    : attention.length;
+
   const events = await prisma.auditLog.findMany({
     where: { ...biz, action: { in: CONTROL_EVENT_ACTIONS } },
     include: { user: { select: { fullName: true } } },
@@ -153,6 +167,14 @@ export default async function DashboardPage() {
                   </Link>
                 );
               })}
+              {attentionTotal > attention.length && (
+                <Link href="/payments?status=pending_approval" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 19px", textDecoration: "none", borderTop: "1px solid #f1f3f5" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "#0e7a5a" }}>
+                    View all {attentionTotal} awaiting your approval
+                  </span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0e7a5a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </Link>
+              )}
               {actionableCompliance > 0 && (
                 <Link href="/compliance" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 19px", textDecoration: "none", borderTop: "1px solid #f1f3f5", background: "#fdf8f3" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: "#9a4513" }}>

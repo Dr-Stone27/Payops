@@ -2,6 +2,9 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { KYB_BADGE, kybColor, avatarColor, getInitials } from "@/lib/design";
 import Link from "next/link";
+import { ClickableRow } from "@/components/ui/ClickableRow";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Building2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -29,15 +32,13 @@ export default async function VendorsPage() {
 
       <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, overflow: "hidden" }}>
         {vendors.length === 0 ? (
-          <div style={{ padding: "52px 24px", textAlign: "center" }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#3f4d5a" }}>No vendors yet</div>
-            <div style={{ fontSize: 12.5, color: "#98a3b0", margin: "6px auto 16px", maxWidth: 360, lineHeight: 1.5 }}>
-              Add a vendor to start submitting payment requests. Each vendor is CAC and NUBAN-verified automatically.
-            </div>
-            <Link href="/vendors/new" style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 9, padding: "9px 16px", textDecoration: "none", display: "inline-block" }}>
-              Add first vendor
-            </Link>
-          </div>
+          <EmptyState
+            icon={Building2}
+            title="No vendors yet"
+            body="Add a vendor to start submitting payment requests. Each vendor is CAC and NUBAN-verified automatically before they can be paid."
+            ctaLabel="Add first vendor"
+            ctaHref="/vendors/new"
+          />
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -56,7 +57,7 @@ export default async function VendorsPage() {
                 const barColor = kybColor(score);
                 const barPct = score != null ? Math.round(score * 100) : 0;
                 return (
-                  <tr key={v.id} style={{ borderTop: "1px solid #f1f3f5" }}>
+                  <ClickableRow key={v.id} href={`/vendors/${v.id}`}>
                     <td style={{ padding: "12px 19px" }}>
                       <Link href={`/vendors/${v.id}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
                         <div style={{ width: 32, height: 32, borderRadius: 9, background: av.bg, color: av.fg, fontSize: 11.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{ini}</div>
@@ -93,7 +94,7 @@ export default async function VendorsPage() {
                         </Link>
                       )}
                     </td>
-                  </tr>
+                  </ClickableRow>
                 );
               })}
             </tbody>

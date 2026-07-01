@@ -62,6 +62,23 @@ input:focus, textarea:focus, select:focus {
 @keyframes wt-spin { to { transform: rotate(360deg); } }
 .wt-spin { animation: wt-spin .9s linear infinite; }
 
+/* Interactive feedback — apply to buttons and button-like links */
+.wt-btn { transition: filter .12s, transform .06s, box-shadow .12s; }
+.wt-btn:hover:not(:disabled) { filter: brightness(.96); }
+.wt-btn:active:not(:disabled) { transform: translateY(1px); }
+.wt-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(14,122,90,.25); }
+
+/* Clickable table rows */
+.wt-row-click { transition: background .1s; }
+.wt-row-click:hover { background: rgba(12,29,46,.025); }
+
+/* Toast entrance */
+@keyframes wt-toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.wt-toast { animation: wt-toast-in .18s ease-out; }
+
 /* PIN box fill animation */
 @keyframes wt-pop { 0% { transform: scale(.92); } 100% { transform: scale(1); } }
 .wt-pop { animation: wt-pop .12s ease-out; }

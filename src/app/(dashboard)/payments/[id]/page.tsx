@@ -6,6 +6,8 @@ import Link from "next/link";
 import { approvePayment, rejectPayment, clearComplianceReview, retryDispatch, retryException, cancelPayment } from "@/actions/payments";
 import { STATUS_BADGE, avatarColor, getInitials } from "@/lib/design";
 import { InfoTooltip } from "@/components/Tooltip";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
 
 interface Payment {
   id: string; invoiceNumber: string; amount: number; costCenter: string | null;
@@ -80,6 +82,8 @@ export default function PaymentDetailPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const { toast } = useToast();
 
   const load = useCallback(() => {
     fetch(`/api/payments/${id}`).then(r => r.json()).then(d => {
@@ -99,33 +103,41 @@ export default function PaymentDetailPage() {
     }
   }, [payment?.status, load]);
 
-  async function handleCancel() {
-    if (!confirm("Cancel this payment request? This cannot be undone.")) return;
+  function handleCancel() {
+    setConfirmCancel(true);
+  }
+
+  async function doCancel() {
     setLoading(true); setError("");
     const result = await cancelPayment(id);
-    if (result?.error) { setError(result.error); setLoading(false); }
-    else { load(); setLoading(false); }
+    if (result?.error) { setError(result.error); toast(result.error, "error"); }
+    else { load(); toast("Payment request cancelled."); }
+    setConfirmCancel(false);
+    setLoading(false);
   }
 
   async function handleApprove() {
     setLoading(true); setError("");
     const result = await approvePayment(id, pin);
     if (result?.error) { setError(result.error); setLoading(false); }
-    else { setPin(""); load(); setLoading(false); }
+    else { setPin(""); load(); setLoading(false); toast("Approved — dispatched to your PSP partner."); }
   }
 
   async function handleReject() {
     setLoading(true); setError("");
     const result = await rejectPayment(id, rejectReason);
     if (result?.error) { setError(result.error); setLoading(false); }
-    else { load(); setLoading(false); }
+    else { load(); setLoading(false); toast("Payment rejected. The maker can see your reason."); }
   }
 
   async function handleCompliance(decision: "clear" | "block") {
     setLoading(true); setError("");
     const result = await clearComplianceReview(id, decision);
     if (result?.error) { setError(result.error); setLoading(false); }
-    else { load(); setLoading(false); }
+    else {
+      load(); setLoading(false);
+      toast(decision === "clear" ? "Compliance cleared — now awaiting PIN approval." : "Payment blocked and moved to the exception queue.");
+    }
   }
 
   if (notFound) return (
@@ -368,6 +380,18 @@ export default function PaymentDetailPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmCancel}
+        title="Cancel this payment request?"
+        body={`The request for ${formatNaira(payment.amount)} to ${payment.vendor.legalName} will be closed. This cannot be undone — you would need to raise a new request.`}
+        confirmLabel="Cancel request"
+        cancelLabel="Keep it"
+        danger
+        loading={loading}
+        onConfirm={doCancel}
+        onClose={() => setConfirmCancel(false)}
+      />
     </div>
   );
 }

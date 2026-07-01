@@ -2,6 +2,8 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { avatarColor, getInitials } from "@/lib/design";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { FileText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +37,11 @@ export default async function AuditLogPage() {
 
       <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, overflow: "hidden" }}>
         {logs.length === 0 ? (
-          <div style={{ padding: "52px 24px", textAlign: "center", fontSize: 13, color: "#98a3b0" }}>No audit entries yet.</div>
+          <EmptyState
+            icon={FileText}
+            title="No audit entries yet"
+            body="Every action — registrations, KYB checks, approvals, settlements — is recorded here permanently the moment it happens."
+          />
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>

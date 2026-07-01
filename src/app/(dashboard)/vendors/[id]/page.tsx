@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { approveVendor } from "@/actions/vendors";
 import { kybColor, avatarColor, getInitials, KYB_BADGE } from "@/lib/design";
+import { useToast } from "@/components/ui/Toast";
 
 interface Vendor {
   id: string; legalName: string; cacNumber: string; nubanLast4: string;
@@ -30,6 +31,7 @@ export default function VendorDetailPage() {
   const [justification, setJustification] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetch(`/api/vendors/${id}`).then(r => r.json()).then(d => {
@@ -43,7 +45,10 @@ export default function VendorDetailPage() {
     setError("");
     const result = await approveVendor(id, justification);
     if (result?.error) { setError(result.error); setLoading(false); }
-    else router.push("/vendors");
+    else {
+      toast("Vendor approved — they can now receive payment requests.");
+      router.push("/vendors");
+    }
   }
 
   if (notFound) return (
