@@ -101,9 +101,7 @@ export default async function DashboardPage() {
                 const av = avatarColor(p.vendor.legalName);
                 const ini = getInitials(p.vendor.legalName);
                 return (
-                  <tr key={p.id} style={{ borderTop: "1px solid #f1f3f5", cursor: "pointer" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(12,29,46,.025)")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}>
+                  <tr key={p.id} style={{ borderTop: "1px solid #f1f3f5", cursor: "pointer" }}>
                     <td style={{ padding: "11px 19px" }}>
                       <Link href={`/payments/${p.id}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
                         <div style={{ width: 28, height: 28, borderRadius: 8, background: av.bg, color: av.fg, fontSize: 10.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{ini}</div>
