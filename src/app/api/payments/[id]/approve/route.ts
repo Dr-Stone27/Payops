@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { dispatchSimulatedSettlement } from "@/lib/settlement";
 import { log } from "@/lib/audit";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -84,29 +85,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     outcome: "processing",
   });
 
-  // Fire-and-forget PSP dispatch
-  dispatchToPsp(paymentId, payment.amount, session.businessId).catch(console.error);
+  // Awaited in-request — fire-and-forget dispatch silently dies on Vercel
+  // (docs/retrospective.md §3). Same shared reconciliation as the UI path.
+  const result = await dispatchSimulatedSettlement(payment, session.businessId);
 
-  return NextResponse.json({ success: true, paymentId, status: "processing" });
-}
-
-async function dispatchToPsp(paymentId: string, amountKobo: number, businessId: string) {
-  await new Promise((r) => setTimeout(r, 2000));
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const txRef = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-  const outcome = Math.random() > 0.2 ? "SUCCESS" : "FAILED";
-  const settledAmount = outcome === "SUCCESS" ? amountKobo : 0;
-
-  const payload = { paymentId, transactionReference: txRef, settlementStatus: outcome, settledAmount, bankReference: `NIBSS-${Date.now()}`, businessId };
-  const secret = process.env.PSP_WEBHOOK_SECRET || "psp-webhook-dev-secret";
-  const body = JSON.stringify(payload);
-  const { createHmac } = await import("crypto");
-  const sig = createHmac("sha256", secret).update(body).digest("hex");
-
-  await fetch(`${baseUrl}/api/webhooks/settlement`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-PSP-Signature": sig },
-    body,
+  return NextResponse.json({
+    success: true,
+    paymentId,
+    status: result.outcome === "reconciled" ? "reconciled" : "exception_queue",
+    outcome: result.outcome,
   });
 }

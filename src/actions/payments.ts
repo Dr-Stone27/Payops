@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { detectComplianceTrigger, getNipTolerance } from "@/lib/compliance";
+import { detectComplianceTrigger } from "@/lib/compliance";
+import { dispatchSimulatedSettlement } from "@/lib/settlement";
 import { log } from "@/lib/audit";
 import bcrypt from "bcryptjs";
 
@@ -161,8 +162,7 @@ export async function approvePayment(paymentId: string, pin: string) {
     outcome: "processing",
   });
 
-  const forceException = payment.invoiceNumber.toUpperCase().startsWith("EXC-");
-  await settleDirectly(paymentId, payment.amount, session.businessId, false, forceException);
+  await dispatchSimulatedSettlement(payment, session.businessId);
 
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
@@ -267,7 +267,7 @@ export async function retryDispatch(paymentId: string) {
   });
   if (!payment) return { error: "Payment not found or not in processing state." };
 
-  await settleDirectly(paymentId, payment.amount, session.businessId, true);
+  await dispatchSimulatedSettlement(payment, session.businessId, true);
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
 }
@@ -287,7 +287,14 @@ export async function retryException(paymentId: string) {
     return { error: "Only PSP failures and status-unknown payments can be retried." };
   }
 
-  await settleDirectly(paymentId, payment.amount, session.businessId, true);
+  // Re-enter the dispatch path: back to processing, then reconcile the
+  // (success-forced) retry through the shared settlement logic.
+  await prisma.paymentRequest.update({
+    where: { id: paymentId },
+    data: { status: "processing", exceptionCategory: null, version: { increment: 1 } },
+  });
+
+  await dispatchSimulatedSettlement(payment, session.businessId, true);
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
 }
@@ -361,26 +368,3 @@ export async function cancelPayment(paymentId: string) {
   return { success: true };
 }
 
-async function settleDirectly(paymentId: string, amountKobo: number, businessId: string, alwaysSucceed = false, alwaysFail = false) {
-  const success = alwaysFail ? false : alwaysSucceed || Math.random() > 0.2;
-  const txRef = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-
-  await prisma.paymentRequest.update({
-    where: { id: paymentId },
-    data: {
-      status: success ? "reconciled" : "exception_queue",
-      transactionReference: txRef,
-      settledAmount: success ? amountKobo : 0,
-      version: { increment: 1 },
-      ...(success ? {} : { exceptionCategory: "PSP_FAILURE" }),
-    },
-  });
-
-  await log({
-    businessId,
-    paymentId,
-    action: success ? "PAYMENT_RECONCILED" : "PSP_FAILURE",
-    detail: `${success ? "Settled" : "PSP returned failure"}. TxRef: ${txRef}.`,
-    outcome: success ? "reconciled" : "exception_queue",
-  });
-}
