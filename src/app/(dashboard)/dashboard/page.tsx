@@ -22,7 +22,7 @@ export default async function DashboardPage() {
     include: { vendor: true },
     orderBy: { createdAt: "desc" },
     take: 8,
-  });
+  }).catch((e) => { console.error("[dashboard] recent query error:", e); return []; });
 
   const stats = [
     { label: "Total payments", value: totalPayments, href: "/payments", urgent: false,

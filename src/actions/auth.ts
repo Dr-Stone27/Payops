@@ -121,7 +121,7 @@ export async function login(formData: FormData) {
     console.error("[login] Audit log error:", e);
   }
 
-  redirect("/dashboard");
+  return { success: true };
 }
 
 export async function logout() {

@@ -45,10 +45,11 @@ export function getNipTolerance(amountKobo: number): number {
   return 5_000;                                // >₦50,000 — max ₦50
 }
 
-export function formatNaira(kobo: number): string {
+export function formatNaira(kobo: number | bigint): string {
+  const n = typeof kobo === "bigint" ? Number(kobo) : kobo;
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
     minimumFractionDigits: 2,
-  }).format(kobo / 100);
+  }).format(n / 100);
 }

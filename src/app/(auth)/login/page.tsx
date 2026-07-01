@@ -30,7 +30,8 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     const result = await login(new FormData(e.currentTarget));
-    if (result?.error) { setError(result.error); setLoading(false); }
+    if (result?.error) { setError(result.error); setLoading(false); return; }
+    if (result?.success) { window.location.href = "/dashboard"; }
   }
 
   return (
