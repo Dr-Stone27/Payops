@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { approvePayment, rejectPayment, clearComplianceReview, retryDispatch } from "@/actions/payments";
+import { approvePayment, rejectPayment, clearComplianceReview, retryDispatch, cancelPayment } from "@/actions/payments";
 import { STATUS_BADGE, avatarColor, getInitials } from "@/lib/design";
 import { InfoTooltip } from "@/components/Tooltip";
 
@@ -90,6 +90,14 @@ export default function PaymentDetailPage() {
       return () => clearInterval(interval);
     }
   }, [payment?.status, load]);
+
+  async function handleCancel() {
+    if (!confirm("Cancel this payment request? This cannot be undone.")) return;
+    setLoading(true); setError("");
+    const result = await cancelPayment(id);
+    if (result?.error) { setError(result.error); setLoading(false); }
+    else { load(); setLoading(false); }
+  }
 
   async function handleApprove() {
     setLoading(true); setError("");
@@ -178,10 +186,16 @@ export default function PaymentDetailPage() {
             <div style={{ fontSize: 13, fontWeight: 600, color: "#1d3d5c" }}>Dispatched to PSP</div>
             <div style={{ fontSize: 12, color: "#3b6fa0", marginTop: 3 }}>Awaiting settlement webhook… This page updates automatically.</div>
           </div>
-          <button onClick={async () => { setLoading(true); await retryDispatch(id); load(); setLoading(false); }} disabled={loading}
-            style={{ fontSize: 12, fontWeight: 600, color: "#1d3d5c", background: "rgba(29,93,164,.1)", border: "1px solid #b5d0f8", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", flexShrink: 0, fontFamily: "inherit", opacity: loading ? 0.5 : 1 }}>
-            {loading ? "…" : "Retry"}
-          </button>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <button onClick={async () => { setLoading(true); await retryDispatch(id); load(); setLoading(false); }} disabled={loading}
+              style={{ fontSize: 12, fontWeight: 600, color: "#1d3d5c", background: "rgba(29,93,164,.1)", border: "1px solid #b5d0f8", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.5 : 1 }}>
+              {loading ? "…" : "Retry"}
+            </button>
+            <button onClick={handleCancel} disabled={loading}
+              style={{ fontSize: 12, fontWeight: 600, color: "#b3261e", background: "transparent", border: "1px solid #f1c5c1", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.5 : 1 }}>
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -286,10 +300,18 @@ export default function PaymentDetailPage() {
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 12.5, color: "#6b7785", padding: "12px 14px", background: "#f5f6f8", borderRadius: 9 }}>
-              {isMaker ? "You created this request and cannot approve it (Maker-Checker rule)." :
-               isComplianceResolver ? "You cleared the compliance review for this payment and cannot also approve it (four-eyes rule)." :
-               "You do not have permission to approve this payment."}
+            <div style={{ fontSize: 12.5, color: "#6b7785", padding: "12px 14px", background: "#f5f6f8", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <span>
+                {isMaker ? "You created this request and cannot approve it (Maker-Checker rule)." :
+                 isComplianceResolver ? "You cleared the compliance review for this payment and cannot also approve it (four-eyes rule)." :
+                 "You do not have permission to approve this payment."}
+              </span>
+              {isMaker && (
+                <button onClick={handleCancel} disabled={loading}
+                  style={{ fontSize: 12, fontWeight: 600, color: "#b3261e", background: "transparent", border: "1px solid #f1c5c1", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", flexShrink: 0, opacity: loading ? 0.5 : 1 }}>
+                  Cancel request
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -297,8 +319,18 @@ export default function PaymentDetailPage() {
 
       {payment.status === "pending_approval" && !isChecker && (
         <div style={{ background: "#fcf7e6", border: "1px solid #e8d28a", borderRadius: 13, padding: "14px 18px" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#8a6510", marginBottom: 3 }}>Awaiting Checker approval</div>
-          <div style={{ fontSize: 12, color: "#9a7820" }}>An Admin or Owner must review and approve this payment request.</div>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#8a6510", marginBottom: 3 }}>Awaiting Checker approval</div>
+              <div style={{ fontSize: 12, color: "#9a7820" }}>An Admin or Owner must review and approve this payment request.</div>
+            </div>
+            {isMaker && (
+              <button onClick={handleCancel} disabled={loading}
+                style={{ fontSize: 12, fontWeight: 600, color: "#b3261e", background: "transparent", border: "1px solid #f1c5c1", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", flexShrink: 0, opacity: loading ? 0.5 : 1 }}>
+                Cancel request
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

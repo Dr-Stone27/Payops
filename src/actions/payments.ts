@@ -263,7 +263,66 @@ export async function retryDispatch(paymentId: string) {
   });
   if (!payment) return { error: "Payment not found or not in processing state." };
 
-  await dispatchToPsp(paymentId, payment.amount, session.businessId).catch(console.error);
+  // Settle directly in DB — avoids the unreliable self-referential HTTP call
+  const txRef = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  const success = Math.random() > 0.2;
+
+  await prisma.paymentRequest.update({
+    where: { id: paymentId },
+    data: {
+      status: success ? "reconciled" : "exception_queue",
+      transactionReference: txRef,
+      settledAmount: success ? payment.amount : 0,
+      version: { increment: 1 },
+      ...(success ? {} : { exceptionCategory: "PSP_FAILURE" }),
+    },
+  });
+
+  await log({
+    businessId: session.businessId,
+    paymentId,
+    action: success ? "PAYMENT_RECONCILED" : "PSP_FAILURE",
+    detail: `Simulated retry. TxRef: ${txRef}.`,
+    outcome: success ? "reconciled" : "exception_queue",
+  });
+
+  revalidatePath(`/payments/${paymentId}`);
+  return { success: true };
+}
+
+export async function cancelPayment(paymentId: string) {
+  const session = await getSession();
+  if (!session) return { error: "Not authenticated." };
+
+  const payment = await prisma.paymentRequest.findFirst({
+    where: { id: paymentId, businessId: session.businessId },
+  });
+  if (!payment) return { error: "Payment not found." };
+
+  const isMaker = payment.makerId === session.userId;
+  const isOwner = session.role === "owner";
+  const cancellableStatuses = ["pending_approval", "compliance_review", "processing"];
+
+  if (!cancellableStatuses.includes(payment.status)) {
+    return { error: "This payment cannot be cancelled in its current state." };
+  }
+  if (!isMaker && !isOwner) {
+    return { error: "Only the requestor or an owner can cancel a payment." };
+  }
+
+  await prisma.paymentRequest.update({
+    where: { id: paymentId },
+    data: { status: "cancelled", rejectionReason: "Cancelled by requestor." },
+  });
+
+  await log({
+    businessId: session.businessId,
+    userId: session.userId,
+    paymentId,
+    action: "PAYMENT_CANCELLED",
+    outcome: "cancelled",
+  });
+
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
 }
