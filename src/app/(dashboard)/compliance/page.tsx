@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
 const TRIGGER_LABEL: Record<string, string> = {
   HIGH_VALUE: "High-value (≥ ₦5M)",
   DUPLICATE_INVOICE: "Duplicate invoice",
-  BENEFICIARY_CHANGE: "Beneficiary change",
   REPEATED_FAILURE: "Repeated PSP failures",
   AMBIGUOUS_MATCH: "Ambiguous KYB match",
 };
@@ -17,9 +16,8 @@ const TRIGGER_LABEL: Record<string, string> = {
 const TRIGGER_MAKER_MSG: Record<string, string> = {
   HIGH_VALUE: "Payments above ₦5,000,000 require a compliance check before approval. An admin will review and clear it.",
   DUPLICATE_INVOICE: "This invoice number is already linked to an existing payment request. We've flagged this to prevent a duplicate payment. An admin will review both requests.",
-  BENEFICIARY_CHANGE: "This vendor's bank account number was updated recently. As a precaution, this payment requires review before it can be approved.",
   REPEATED_FAILURE: "This vendor has had multiple failed payments recently. This payment requires review before proceeding.",
-  AMBIGUOUS_MATCH: "This vendor was manually approved with a partial name match. Payments to manually approved vendors go through an extra review step.",
+  AMBIGUOUS_MATCH: "This vendor's bank account name was only a partial match to their CAC record (KYB score 70–84%), so payments to them get an extra review step.",
 };
 
 export default async function CompliancePage() {
@@ -54,7 +52,7 @@ export default async function CompliancePage() {
           </div>
           <div style={{ fontSize: 14, fontWeight: 600, color: "#3f4d5a" }}>Compliance queue is clear</div>
           <div style={{ fontSize: 12.5, color: "#98a3b0", margin: "6px auto 0", maxWidth: 400, lineHeight: 1.55 }}>
-            Payments ≥ ₦5M, duplicate invoices, ambiguous KYB matches, or beneficiary changes appear here for review before reaching a Checker.
+            Payments ≥ ₦5M, duplicate invoices, ambiguous KYB matches, or repeated PSP failures appear here for review before reaching a Checker.
           </div>
         </div>
       ) : (

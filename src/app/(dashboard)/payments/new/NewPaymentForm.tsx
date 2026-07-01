@@ -40,6 +40,10 @@ export default function NewPaymentForm({ approvedVendors, pendingCount }: { appr
         <p style={{ fontSize: 13, color: "#6b7785", margin: 0 }}>Must be backed by an invoice. Checker approval required before execution.</p>
       </div>
 
+      <div style={{ marginBottom: 16, padding: "11px 14px", background: "#e6f0fd", border: "1px solid #b5d0f8", borderRadius: 10, fontSize: 12, color: "#1d5da4" }}>
+        <strong>Demo:</strong> invoice number starting <strong>EXC-</strong> → forces a PSP failure · <strong>MIS-</strong> → forces an amount mismatch
+      </div>
+
       {isHighValue && (
         <div style={{ marginBottom: 16, padding: "11px 14px", background: "#fdeee2", border: "1px solid #f6cdb0", borderRadius: 10, fontSize: 12.5, color: "#9a4513", display: "flex", alignItems: "flex-start", gap: 10 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>

@@ -261,6 +261,9 @@ export async function clearComplianceReview(paymentId: string, decision: "clear"
 export async function retryDispatch(paymentId: string) {
   const session = await getSession();
   if (!session) return { error: "Not authenticated." };
+  if (!["owner", "admin"].includes(session.role)) {
+    return { error: "Only Checkers can retry a dispatch." };
+  }
 
   const payment = await prisma.paymentRequest.findFirst({
     where: { id: paymentId, businessId: session.businessId, status: "processing" },
@@ -283,8 +286,8 @@ export async function retryException(paymentId: string) {
     where: { id: paymentId, businessId: session.businessId, status: "exception_queue" },
   });
   if (!payment) return { error: "Payment not found or not in exception queue." };
-  if (payment.exceptionCategory !== "PSP_FAILURE" && payment.exceptionCategory !== "STATUS_UNKNOWN") {
-    return { error: "Only PSP failures and status-unknown payments can be retried." };
+  if (payment.exceptionCategory !== "PSP_FAILURE") {
+    return { error: "Only PSP failures can be retried." };
   }
 
   // Re-enter the dispatch path: back to processing, then reconcile the

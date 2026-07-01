@@ -4,6 +4,7 @@ import { formatNaira } from "@/lib/compliance";
 import { avatarColor, getInitials } from "@/lib/design";
 import Link from "next/link";
 import AcknowledgeButton from "./AcknowledgeButton";
+import RetryButton from "./RetryButton";
 
 export const dynamic = "force-dynamic";
 
@@ -18,19 +19,9 @@ const CATEGORY: Record<string, { label: string; desc: string; actions: string[] 
     desc: "The amount that arrived differs from the invoice amount by more than the expected bank fee. Manual review is needed.",
     actions: ["acknowledge", "cancel"],
   },
-  STATUS_UNKNOWN: {
-    label: "Status Unknown",
-    desc: "No settlement confirmation received in 48 hours. The payment may be in transit or delayed at the bank. Contact your PSP for a status update.",
-    actions: ["cancel"],
-  },
-  PARTIAL_TRANCHE_SETTLEMENT: {
-    label: "Partial Tranche",
-    desc: "One or more tranches settled successfully but the sequence was interrupted. The vendor has received a partial amount.",
-    actions: ["cancel"],
-  },
   COMPLIANCE_REVIEW_TIMEOUT: {
-    label: "Compliance Timeout",
-    desc: "The compliance review was not completed within 48 hours. The request has been paused.",
+    label: "Compliance Blocked",
+    desc: "A checker blocked this payment during compliance review. It will not proceed. Cancel it, or raise a corrected request.",
     actions: ["cancel"],
   },
   ORPHANED_SETTLEMENT: {
@@ -118,11 +109,8 @@ export default async function ExceptionsPage() {
                     View details
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                   </Link>
-                  {cat.actions.includes("retry") && (
-                    <Link href={`/payments/${p.id}`}
-                      style={{ height: 36, padding: "0 14px", border: "none", borderRadius: 8, background: "#fdeceb", color: "#b3261e", fontSize: 12.5, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-                      Retry payment
-                    </Link>
+                  {cat.actions.includes("retry") && isChecker && (
+                    <RetryButton paymentId={p.id} />
                   )}
                   {cat.actions.includes("acknowledge") && isChecker && (
                     <AcknowledgeButton paymentId={p.id} />

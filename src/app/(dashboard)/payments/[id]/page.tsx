@@ -24,9 +24,15 @@ function formatNaira(kobo: number) {
 const TRIGGER_LABELS: Record<string, string> = {
   HIGH_VALUE: "High-value payment (≥ ₦5,000,000)",
   DUPLICATE_INVOICE: "Duplicate invoice number detected",
-  BENEFICIARY_CHANGE: "Vendor bank details changed recently",
   REPEATED_FAILURE: "Repeated PSP failures for this vendor",
   AMBIGUOUS_MATCH: "Vendor KYB match score was marginal (0.70–0.84)",
+};
+
+const EXCEPTION_LABELS: Record<string, string> = {
+  PSP_FAILURE: "PSP failure",
+  AMOUNT_MISMATCH: "Amount mismatch",
+  COMPLIANCE_REVIEW_TIMEOUT: "Compliance blocked",
+  ORPHANED_SETTLEMENT: "Orphaned settlement",
 };
 
 function FactRow({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
@@ -67,6 +73,7 @@ function SegmentedPIN({ value, onChange }: { value: string; onChange: (v: string
 export default function PaymentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [payment, setPayment] = useState<Payment | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [sessionRole, setSessionRole] = useState<string | null>(null);
   const [pin, setPin] = useState("");
@@ -76,10 +83,11 @@ export default function PaymentDetailPage() {
 
   const load = useCallback(() => {
     fetch(`/api/payments/${id}`).then(r => r.json()).then(d => {
+      if (!d?.payment) { setNotFound(true); return; }
       setPayment(d.payment);
       setSessionUserId(d.userId);
       setSessionRole(d.role);
-    });
+    }).catch(() => setNotFound(true));
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
@@ -119,6 +127,16 @@ export default function PaymentDetailPage() {
     if (result?.error) { setError(result.error); setLoading(false); }
     else { load(); setLoading(false); }
   }
+
+  if (notFound) return (
+    <div style={{ padding: "60px 36px", textAlign: "center" }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: "#3f4d5a", marginBottom: 6 }}>Payment not found</div>
+      <div style={{ fontSize: 12.5, color: "#98a3b0", marginBottom: 18 }}>It may have been removed, or the link is incorrect.</div>
+      <Link href="/payments" style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 9, padding: "9px 16px", textDecoration: "none", display: "inline-block" }}>
+        Back to payments
+      </Link>
+    </div>
+  );
 
   if (!payment) return (
     <div style={{ padding: 36, display: "flex", alignItems: "center", gap: 10, color: "#8a97a6", fontSize: 13 }}>
@@ -187,10 +205,12 @@ export default function PaymentDetailPage() {
             <div style={{ fontSize: 12, color: "#3b6fa0", marginTop: 3 }}>Settlement is being confirmed. Watchtower never holds your funds — the transfer moves through your licensed PSP. This page updates automatically.</div>
           </div>
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-            <button onClick={async () => { setLoading(true); await retryDispatch(id); load(); setLoading(false); }} disabled={loading}
-              style={{ fontSize: 12, fontWeight: 600, color: "#1d3d5c", background: "rgba(29,93,164,.1)", border: "1px solid #b5d0f8", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.5 : 1 }}>
-              {loading ? "…" : "Retry"}
-            </button>
+            {isChecker && (
+              <button onClick={async () => { setLoading(true); await retryDispatch(id); load(); setLoading(false); }} disabled={loading}
+                style={{ fontSize: 12, fontWeight: 600, color: "#1d3d5c", background: "rgba(29,93,164,.1)", border: "1px solid #b5d0f8", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.5 : 1 }}>
+                {loading ? "…" : "Retry"}
+              </button>
+            )}
             <button onClick={handleCancel} disabled={loading}
               style={{ fontSize: 12, fontWeight: 600, color: "#b3261e", background: "transparent", border: "1px solid #f1c5c1", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.5 : 1 }}>
               Cancel
@@ -220,18 +240,18 @@ export default function PaymentDetailPage() {
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#a32820" }}>Exception: {payment.exceptionCategory?.replace(/_/g, " ")}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#a32820" }}>Exception: {EXCEPTION_LABELS[payment.exceptionCategory ?? ""] ?? payment.exceptionCategory?.replace(/_/g, " ")}</div>
               <div style={{ fontSize: 12, color: "#b3261e", marginTop: 3 }}>
                 {payment.exceptionCategory === "PSP_FAILURE" && "The PSP returned a failure status. No funds left your account — you can retry or cancel."}
                 {payment.exceptionCategory === "AMOUNT_MISMATCH" && `Settled amount (${formatNaira(payment.settledAmount ?? 0)}) differs from the invoice outside the NIP tolerance band. Cancel and re-raise if needed.`}
-                {payment.exceptionCategory === "STATUS_UNKNOWN" && "No settlement confirmation received within 48 hours. Retry to re-dispatch or cancel."}
-                {payment.exceptionCategory === "COMPLIANCE_REVIEW_TIMEOUT" && "Compliance review was not completed within the required window. Cancel and re-submit."}
+                {payment.exceptionCategory === "COMPLIANCE_REVIEW_TIMEOUT" && "A checker blocked this payment during compliance review. It will not proceed — cancel it, or raise a corrected request."}
+                {payment.exceptionCategory === "ORPHANED_SETTLEMENT" && "A settlement confirmation arrived for a payment that was already closed. Review the transaction reference with your PSP."}
               </div>
             </div>
           </div>
           {error && <div style={{ marginBottom: 10, padding: "9px 12px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 8, fontSize: 12.5, color: "#b3261e" }}>{error}</div>}
           <div style={{ display: "flex", gap: 8 }}>
-            {(payment.exceptionCategory === "PSP_FAILURE" || payment.exceptionCategory === "STATUS_UNKNOWN") && isChecker && (
+            {payment.exceptionCategory === "PSP_FAILURE" && isChecker && (
               <button onClick={async () => { setLoading(true); setError(""); const r = await retryException(id); if (r?.error) { setError(r.error); setLoading(false); } else { load(); setLoading(false); } }} disabled={loading}
                 style={{ height: 36, padding: "0 14px", background: "#dc4338", color: "#fff", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.6 : 1 }}>
                 {loading ? "…" : "Retry payment"}
