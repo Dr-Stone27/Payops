@@ -254,13 +254,13 @@ export default function PaymentDetailPage() {
 
           {canApprove ? (
             <>
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#3f4d5a", marginBottom: 12 }}>
                   4-digit approval PIN
                   <InfoTooltip content="Your PIN confirms this payment. It's recorded in the audit log with your name and timestamp. Double-check the details before entering it." wide />
                 </label>
                 <SegmentedPIN value={pin} onChange={setPin} />
-                <div style={{ fontSize: 11.5, color: "#9aa6b2", marginTop: 10 }}>PIN is validated server-side — this approval is your digital signature.</div>
+                <div style={{ fontSize: 11.5, color: "#9aa6b2", marginTop: 10, textAlign: "center" }}>PIN is validated server-side — this approval is your digital signature.</div>
               </div>
               <button onClick={handleApprove} disabled={loading || pin.length !== 4}
                 style={{ width: "100%", height: 46, background: "#0e7a5a", color: "#fff", border: "none", borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: (loading || pin.length !== 4) ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: (loading || pin.length !== 4) ? 0.5 : 1, marginBottom: 18 }}>

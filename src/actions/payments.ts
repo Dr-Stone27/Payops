@@ -157,8 +157,8 @@ export async function approvePayment(paymentId: string, pin: string) {
     outcome: "processing",
   });
 
-  // Trigger simulated PSP dispatch (fire-and-forget)
-  dispatchToPsp(paymentId, payment.amount, session.businessId).catch(console.error);
+  // Await PSP dispatch — fire-and-forget doesn't survive Vercel serverless lifecycle
+  await dispatchToPsp(paymentId, payment.amount, session.businessId).catch(console.error);
 
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
@@ -251,7 +251,6 @@ export async function clearComplianceReview(paymentId: string, decision: "clear"
 }
 
 async function dispatchToPsp(paymentId: string, amountKobo: number, businessId: string) {
-  await new Promise((r) => setTimeout(r, 2000));
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   const txRef = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
