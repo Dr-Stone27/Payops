@@ -6,8 +6,8 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { detectComplianceTrigger } from "@/lib/compliance";
 import { dispatchSimulatedSettlement } from "@/lib/settlement";
+import { executeApproval } from "@/lib/approval";
 import { log } from "@/lib/audit";
-import bcrypt from "bcryptjs";
 
 const PSP_LIMIT_KOBO = 1_000_000_000; // ₦10,000,000
 
@@ -88,81 +88,9 @@ export async function createPayment(formData: FormData) {
 export async function approvePayment(paymentId: string, pin: string) {
   const session = await getSession();
   if (!session) return { error: "Not authenticated." };
-  if (!["owner", "admin"].includes(session.role)) {
-    return { error: "Only Checkers (Admin or Owner) can approve payments." };
-  }
 
-  const user = await prisma.user.findUnique({ where: { id: session.userId } });
-  if (!user?.pinHash) return { error: "You must set up a PIN before approving payments." };
-
-  // PIN lockout check
-  if (user.pinLockedUntil && user.pinLockedUntil > new Date()) {
-    const mins = Math.ceil((user.pinLockedUntil.getTime() - Date.now()) / 60000);
-    return { error: `PIN locked. Try again in ${mins} minute(s).` };
-  }
-
-  const payment = await prisma.paymentRequest.findFirst({
-    where: { id: paymentId, businessId: session.businessId },
-    include: { vendor: true },
-  });
-  if (!payment) return { error: "Payment not found." };
-  if (payment.status !== "pending_approval") {
-    return { error: "This payment is not awaiting approval." };
-  }
-
-  // Four-eyes: Maker cannot approve own request
-  if (payment.makerId === session.userId) {
-    return { error: "You cannot approve a payment you created." };
-  }
-
-  // Four-eyes: Compliance reviewer cannot also approve
-  if (payment.complianceReviewResolvedBy === session.userId) {
-    return { error: "The compliance reviewer cannot also approve this payment." };
-  }
-
-  // PIN verification
-  const pinValid = await bcrypt.compare(pin, user.pinHash);
-  if (!pinValid) {
-    const attempts = user.pinFailedAttempts + 1;
-    const lockout = attempts >= 5 ? new Date(Date.now() + 30 * 60 * 1000) : null;
-    await prisma.user.update({
-      where: { id: session.userId },
-      data: { pinFailedAttempts: attempts, pinLockedUntil: lockout },
-    });
-    const remaining = 5 - attempts;
-    if (remaining <= 0) return { error: "Incorrect PIN. Your PIN has been locked for 30 minutes." };
-    return { error: `Incorrect PIN. ${remaining} attempt(s) remaining.` };
-  }
-
-  // Reset PIN attempts and atomically update payment status with version check
-  const updated = await prisma.$transaction(async (tx) => {
-    await tx.user.update({
-      where: { id: session.userId },
-      data: { pinFailedAttempts: 0, pinLockedUntil: null },
-    });
-
-    const result = await tx.paymentRequest.updateMany({
-      where: { id: paymentId, version: payment.version, status: "pending_approval" },
-      data: { status: "processing", version: { increment: 1 } },
-    });
-
-    return result.count;
-  });
-
-  if (updated === 0) {
-    return { error: "Concurrent conflict: this payment was already actioned. Please reload." };
-  }
-
-  await log({
-    businessId: session.businessId,
-    userId: session.userId,
-    paymentId,
-    action: "PAYMENT_APPROVED",
-    detail: `PIN verified. Dispatching to PSP.`,
-    outcome: "processing",
-  });
-
-  await dispatchSimulatedSettlement(payment, session.businessId);
+  const result = await executeApproval(session, paymentId, pin);
+  if (!result.ok) return { error: result.error };
 
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
@@ -254,23 +182,6 @@ export async function clearComplianceReview(paymentId: string, decision: "clear"
     });
   }
 
-  revalidatePath(`/payments/${paymentId}`);
-  return { success: true };
-}
-
-export async function retryDispatch(paymentId: string) {
-  const session = await getSession();
-  if (!session) return { error: "Not authenticated." };
-  if (!["owner", "admin"].includes(session.role)) {
-    return { error: "Only Checkers can retry a dispatch." };
-  }
-
-  const payment = await prisma.paymentRequest.findFirst({
-    where: { id: paymentId, businessId: session.businessId, status: "processing" },
-  });
-  if (!payment) return { error: "Payment not found or not in processing state." };
-
-  await dispatchSimulatedSettlement(payment, session.businessId, true);
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
 }

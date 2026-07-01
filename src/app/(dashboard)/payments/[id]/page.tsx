@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { approvePayment, rejectPayment, clearComplianceReview, retryDispatch, retryException, cancelPayment } from "@/actions/payments";
+import { approvePayment, rejectPayment, clearComplianceReview, retryException, cancelPayment } from "@/actions/payments";
 import { STATUS_BADGE, avatarColor, getInitials } from "@/lib/design";
 import { InfoTooltip } from "@/components/Tooltip";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -95,13 +95,6 @@ export default function PaymentDetailPage() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    if (payment?.status === "processing") {
-      const interval = setInterval(load, 2000);
-      return () => clearInterval(interval);
-    }
-  }, [payment?.status, load]);
 
   function handleCancel() {
     setConfirmCancel(true);
@@ -208,26 +201,17 @@ export default function PaymentDetailPage() {
         <FactRow label="Created" value={new Date(payment.createdAt).toLocaleString("en-NG", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })} />
       </div>
 
-      {/* Processing */}
+      {/* Processing — transient; settlement resolves within the approval request */}
       {payment.status === "processing" && (
         <div style={{ background: "#e6f0fd", border: "1px solid #b5d0f8", borderRadius: 13, padding: "14px 18px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12 }}>
-          <span className="wt-spin" style={{ display: "inline-block", width: 18, height: 18, border: "2.5px solid rgba(29,93,164,.3)", borderTopColor: "#3b82f6", borderRadius: "50%", flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#1d3d5c" }}>Dispatched to your PSP partner</div>
-            <div style={{ fontSize: 12, color: "#3b6fa0", marginTop: 3 }}>Settlement is being confirmed. Watchtower never holds your funds — the transfer moves through your licensed PSP. This page updates automatically.</div>
+            <div style={{ fontSize: 12, color: "#3b6fa0", marginTop: 3 }}>Watchtower never holds your funds — the transfer moves through your licensed PSP. Reload the page to see the settlement outcome.</div>
           </div>
-          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-            {isChecker && (
-              <button onClick={async () => { setLoading(true); await retryDispatch(id); load(); setLoading(false); }} disabled={loading}
-                style={{ fontSize: 12, fontWeight: 600, color: "#1d3d5c", background: "rgba(29,93,164,.1)", border: "1px solid #b5d0f8", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.5 : 1 }}>
-                {loading ? "…" : "Retry"}
-              </button>
-            )}
-            <button onClick={handleCancel} disabled={loading}
-              style={{ fontSize: 12, fontWeight: 600, color: "#b3261e", background: "transparent", border: "1px solid #f1c5c1", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.5 : 1 }}>
-              Cancel
-            </button>
-          </div>
+          <button onClick={handleCancel} disabled={loading}
+            style={{ fontSize: 12, fontWeight: 600, color: "#b3261e", background: "transparent", border: "1px solid #f1c5c1", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", flexShrink: 0, opacity: loading ? 0.5 : 1 }}>
+            Cancel
+          </button>
         </div>
       )}
 
