@@ -40,7 +40,7 @@ function FactRow({ label, value, mono }: { label: string; value: React.ReactNode
 
 function SegmentedPIN({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const hiddenRef = useRef<HTMLInputElement>(null);
-  const digits = value.padEnd(4, "").slice(0, 4).split("");
+  const digits = Array.from({ length: 4 }, (_, i) => value[i] ?? "");
 
   return (
     <div style={{ position: "relative", display: "inline-flex", gap: 10 }} onClick={() => hiddenRef.current?.focus()}>
