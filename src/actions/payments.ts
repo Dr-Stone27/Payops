@@ -30,6 +30,10 @@ export async function createPayment(formData: FormData) {
 
   const amountKobo = Math.round(amountNaira * 100);
 
+  if (!Number.isFinite(amountKobo) || amountKobo <= 0) {
+    return { error: "Amount must be greater than zero." };
+  }
+
   if (amountKobo > PSP_LIMIT_KOBO * 5) {
     return { error: `TRANCHE_LIMIT_EXCEEDED: Maximum payment is ₦50,000,000. Please split into separate requests.` };
   }
