@@ -157,7 +157,8 @@ export async function approvePayment(paymentId: string, pin: string) {
     outcome: "processing",
   });
 
-  await settleDirectly(paymentId, payment.amount, session.businessId);
+  const forceException = payment.invoiceNumber.toUpperCase().startsWith("EXC-");
+  await settleDirectly(paymentId, payment.amount, session.businessId, false, forceException);
 
   revalidatePath(`/payments/${paymentId}`);
   return { success: true };
@@ -324,8 +325,8 @@ export async function cancelPayment(paymentId: string) {
   return { success: true };
 }
 
-async function settleDirectly(paymentId: string, amountKobo: number, businessId: string, alwaysSucceed = false) {
-  const success = alwaysSucceed || Math.random() > 0.2;
+async function settleDirectly(paymentId: string, amountKobo: number, businessId: string, alwaysSucceed = false, alwaysFail = false) {
+  const success = alwaysFail ? false : alwaysSucceed || Math.random() > 0.2;
   const txRef = `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
   await prisma.paymentRequest.update({
