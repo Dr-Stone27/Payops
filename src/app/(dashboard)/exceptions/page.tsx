@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { formatNaira } from "@/lib/compliance";
 import { avatarColor, getInitials } from "@/lib/design";
 import Link from "next/link";
+import AcknowledgeButton from "./AcknowledgeButton";
 
 export const dynamic = "force-dynamic";
 
@@ -44,10 +45,12 @@ export default async function ExceptionsPage() {
   if (!session) return null;
 
   const exceptions = await prisma.paymentRequest.findMany({
-    where: { businessId: session.businessId, status: "exception_queue" },
+    where: { businessId: session.businessId, status: "exception_queue", acknowledgedAt: null },
     include: { vendor: true, maker: { select: { fullName: true } } },
     orderBy: { updatedAt: "desc" },
   });
+
+  const isChecker = ["owner", "admin"].includes(session.role);
 
   return (
     <div style={{ padding: "30px 36px 80px", maxWidth: 760, margin: "0 auto" }}>
@@ -121,10 +124,8 @@ export default async function ExceptionsPage() {
                       Retry payment
                     </Link>
                   )}
-                  {cat.actions.includes("acknowledge") && (
-                    <span style={{ height: 36, padding: "0 14px", border: "1px solid #e8eaed", borderRadius: 8, background: "#f5f6f8", color: "#6b7785", fontSize: 12.5, fontWeight: 500, display: "inline-flex", alignItems: "center" }}>
-                      Acknowledge
-                    </span>
+                  {cat.actions.includes("acknowledge") && isChecker && (
+                    <AcknowledgeButton paymentId={p.id} />
                   )}
                 </div>
               </div>

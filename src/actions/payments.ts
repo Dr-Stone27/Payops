@@ -292,6 +292,38 @@ export async function retryException(paymentId: string) {
   return { success: true };
 }
 
+export async function acknowledgeException(paymentId: string) {
+  const session = await getSession();
+  if (!session) return { error: "Not authenticated." };
+  if (!["owner", "admin"].includes(session.role)) {
+    return { error: "Only Checkers can acknowledge exceptions." };
+  }
+
+  const payment = await prisma.paymentRequest.findFirst({
+    where: { id: paymentId, businessId: session.businessId, status: "exception_queue" },
+  });
+  if (!payment) return { error: "Payment not found or not in exception queue." };
+  if (payment.acknowledgedAt) return { error: "This exception has already been acknowledged." };
+
+  await prisma.paymentRequest.update({
+    where: { id: paymentId },
+    data: { acknowledgedAt: new Date(), acknowledgedBy: session.userId },
+  });
+
+  await log({
+    businessId: session.businessId,
+    userId: session.userId,
+    paymentId,
+    action: "EXCEPTION_ACKNOWLEDGED",
+    detail: `Exception (${payment.exceptionCategory ?? "UNKNOWN"}) reviewed and marked resolved.`,
+    outcome: "acknowledged",
+  });
+
+  revalidatePath("/exceptions");
+  revalidatePath(`/payments/${paymentId}`);
+  return { success: true };
+}
+
 export async function cancelPayment(paymentId: string) {
   const session = await getSession();
   if (!session) return { error: "Not authenticated." };

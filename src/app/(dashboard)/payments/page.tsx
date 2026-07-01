@@ -11,7 +11,6 @@ const ALL_STATUSES = [
   { key: "pending_approval", label: "Pending" },
   { key: "compliance_review", label: "Compliance" },
   { key: "processing", label: "Processing" },
-  { key: "settled", label: "Settled" },
   { key: "reconciled", label: "Reconciled" },
   { key: "exception_queue", label: "Exception" },
   { key: "cancelled", label: "Cancelled" },
