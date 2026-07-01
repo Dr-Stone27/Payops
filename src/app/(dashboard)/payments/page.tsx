@@ -28,14 +28,19 @@ export default async function PaymentsPage({
   const { status: filterStatus } = await searchParams;
   const activeFilter = filterStatus && filterStatus !== "all" ? filterStatus : undefined;
 
-  const payments = await prisma.paymentRequest.findMany({
-    where: {
-      businessId: session.businessId,
-      ...(activeFilter ? { status: activeFilter } : {}),
-    },
-    include: { vendor: true, maker: { select: { fullName: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+  const [payments, approvedVendorCount] = await Promise.all([
+    prisma.paymentRequest.findMany({
+      where: {
+        businessId: session.businessId,
+        ...(activeFilter ? { status: activeFilter } : {}),
+      },
+      include: { vendor: true, maker: { select: { fullName: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.vendor.count({
+      where: { businessId: session.businessId, kybStatus: "approved" },
+    }),
+  ]);
 
   return (
     <div style={{ padding: "30px 36px 80px", maxWidth: 1080, margin: "0 auto" }}>
@@ -71,11 +76,17 @@ export default async function PaymentsPage({
           <div style={{ padding: "52px 24px", textAlign: "center" }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: "#3f4d5a" }}>No payments {activeFilter ? "in this state" : "yet"}</div>
             <div style={{ fontSize: 12.5, color: "#98a3b0", margin: "6px auto 16px", maxWidth: 360, lineHeight: 1.5 }}>
-              {activeFilter ? "Try selecting a different filter." : "You'll need at least one approved vendor before submitting a request."}
+              {activeFilter
+                ? "Try selecting a different filter."
+                : approvedVendorCount > 0
+                  ? "Ready to go — click '+ New payment' above to create your first payment request."
+                  : "Add and approve at least one vendor before submitting a payment request."}
             </div>
             {!activeFilter && (
-              <Link href="/vendors/new" style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 9, padding: "9px 16px", textDecoration: "none", display: "inline-block" }}>
-                Add first vendor
+              <Link
+                href={approvedVendorCount > 0 ? "/payments/new" : "/vendors/new"}
+                style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 9, padding: "9px 16px", textDecoration: "none", display: "inline-block" }}>
+                {approvedVendorCount > 0 ? "Create first payment" : "Add first vendor"}
               </Link>
             )}
           </div>
