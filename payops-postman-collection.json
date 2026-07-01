@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "PayOps Control Tower — Backend QA",
-    "description": "Full backend test suite for PayOps Control Tower. Run in order: Auth → Vendors → Payments → Webhooks → Authorization. All Server Actions are tested via their underlying Next.js Server Action POST endpoint.\n\nPre-requisites:\n1. `npm run dev` running at http://localhost:3000\n2. `npx prisma migrate dev` applied (fresh DB)\n\nCollection Variables (set in Postman):\n- BASE_URL: http://localhost:3000\n- PSP_WEBHOOK_SECRET: psp-webhook-dev-secret\n- SESSION_COOKIE: (auto-set by tests)\n- OWNER_SESSION: (auto-set)\n- MAKER_SESSION: (auto-set)\n- VENDOR_ID: (auto-set)\n- PAYMENT_ID: (auto-set)\n- COMPLIANCE_PAYMENT_ID: (auto-set)",
+    "name": "Watchtower — Backend QA",
+    "description": "Full backend test suite for Watchtower. Run in order: Auth → Vendors → Payments → Webhooks → Authorization. All Server Actions are tested via their underlying Next.js Server Action POST endpoint.\n\nPre-requisites:\n1. `npm run dev` running at http://localhost:3000\n2. `npx prisma migrate dev` applied (fresh DB)\n\nCollection Variables (set in Postman):\n- BASE_URL: http://localhost:3000\n- PSP_WEBHOOK_SECRET: psp-webhook-dev-secret\n- SESSION_COOKIE: (auto-set by tests)\n- OWNER_SESSION: (auto-set)\n- MAKER_SESSION: (auto-set)\n- VENDOR_ID: (auto-set)\n- PAYMENT_ID: (auto-set)\n- COMPLIANCE_PAYMENT_ID: (auto-set)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [

@@ -1,4 +1,4 @@
-# PayOps Control Tower — Spec Review Findings v1.0
+# Watchtower — Spec Review Findings v1.0
 
 **Review date:** 2026-06-13
 **Spec reviewed:** `payops-control-tower-spec.md` v1.0
@@ -9,7 +9,7 @@
 ## CLAUDE CODE RESOLUTION PROMPT
 
 ```
-You are working on PayOps Control Tower. Read CLAUDE.md in full before proceeding.
+You are working on Watchtower. Read CLAUDE.md in full before proceeding.
 
 MODE: MID-BUILD REQUIREMENT CLARIFICATION (bulk resolution pass)
 
@@ -173,7 +173,7 @@ The Invoice table unique index prevents a second Invoice record with the same `(
 **Section:** §9 Exception Queue, VENDOR_BLOCKED category
 This exception can occur after a payment has been dispatched to the simulated PSP. The permitted action "Cancel" is listed but the cancellation path for an already-dispatched payment in the simulated environment is not defined. The simulated PSP may have already fired a settlement webhook.
 
-> **Open question:** For a `VENDOR_BLOCKED` exception on a request already in `processing`, does "Cancel" mean: (a) attempt a PSP reversal instruction (requires defining a reversal webhook schema for the simulator), or (b) mark the request as cancelled in PayOps and route the settlement webhook (when it arrives) to the exception queue with a new category? Define the simulated PSP's reversal capability.
+> **Open question:** For a `VENDOR_BLOCKED` exception on a request already in `processing`, does "Cancel" mean: (a) attempt a PSP reversal instruction (requires defining a reversal webhook schema for the simulator), or (b) mark the request as cancelled in Watchtower and route the settlement webhook (when it arrives) to the exception queue with a new category? Define the simulated PSP's reversal capability.
 
 ---
 
@@ -463,7 +463,7 @@ The tranche splitting flow (second PIN, sequential submission, partial reconcili
 **CLAUDE.md §5.8:** PSP Webhook "Returns settlement status, Transaction ID, Bank Reference."
 **Spec §12 Resolved Blockers:** Defines fields as `paymentRequestId`, `settlementStatus`, `settledAmount`, `bankReference`, `settlementTimestamp`. `transactionId` (PSP-issued) is absent.
 
-`paymentRequestId` is PayOps's own reference echoed back — not the PSP's transaction ID. CLAUDE.md designates transaction ID as the deduplication key (§5.9). The spec's webhook schema omits the field that performs deduplication.
+`paymentRequestId` is Watchtower's own reference echoed back — not the PSP's transaction ID. CLAUDE.md designates transaction ID as the deduplication key (§5.9). The spec's webhook schema omits the field that performs deduplication.
 
 > **Open question:** Add `transactionId` (PSP-issued, unique per settlement event) to the simulated PSP webhook schema in §12. Confirm this is the field used for `WebhookEvent` deduplication (resolving AL-02 and BL-01).
 

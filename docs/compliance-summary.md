@@ -1,4 +1,4 @@
-# Compliance Summary: PayOps Control Tower
+# Compliance Summary: Watchtower
 
 **Capstone Deliverable:** 5 — Compliance Summary
 **Document Status:** Complete — Panel-ready v1.0
@@ -12,7 +12,7 @@
 
 ### Which tier applies
 
-PayOps is a **Payment Solution Service Provider (PSSP)** under the CBN's 2020 payment system licence categorisation (Circular Ref No. PSM/CIR/GEN/CIR/01/22, issued December 9, 2020).
+Watchtower is a **Payment Solution Service Provider (PSSP)** under the CBN's 2020 payment system licence categorisation (Circular Ref No. PSM/CIR/GEN/CIR/01/22, issued December 9, 2020).
 
 The CBN defines four broad licence categories for payment companies in Nigeria:
 
@@ -31,20 +31,20 @@ Within the Payment Solution Services category, three sub-licences exist:
 | PTSP | POS terminal deployment and management, payment terminal support |
 | Super-Agent | Agent recruitment and management for banking access |
 
-**PayOps maps to PSSP.** Its core activities — payment orchestration workflow, merchant/vendor collections, invoice-backed payment processing — are the exact activities the PSSP licence covers. It does not operate POS terminals (PTSP) and does not run an agent network (Super-Agent).
+**Watchtower maps to PSSP.** Its core activities — payment orchestration workflow, merchant/vendor collections, invoice-backed payment processing — are the exact activities the PSSP licence covers. It does not operate POS terminals (PTSP) and does not run an agent network (Super-Agent).
 
-**The prohibition on fund holding is statutory**, not optional. No PSSP, PTSP, or Super-Agent licence permits holding customer funds. Fund movement must go through a licensed PSP partner or bank. This directly validates PayOps's architectural decision to hold zero customer funds.
+**The prohibition on fund holding is statutory**, not optional. No PSSP, PTSP, or Super-Agent licence permits holding customer funds. Fund movement must go through a licensed PSP partner or bank. This directly validates Watchtower's architectural decision to hold zero customer funds.
 
 ### Minimum capital requirement
 
 - Standalone PSSP licence: **₦100 million** minimum paid-up capital
 - Combined PSS licence (PSSP + PTSP + Super-Agent): ₦250 million
 
-PayOps would apply for a standalone PSSP licence. The ₦250M requirement applies only to the combined PSS holding structure.
+Watchtower would apply for a standalone PSSP licence. The ₦250M requirement applies only to the combined PSS holding structure.
 
 ### MVP operating position
 
-PayOps MVP operates under its licensed PSP partner's CBN authorisation. This is standard practice for early-stage Nigerian payment products — the PSP partner is the licenced entity for execution; PayOps is the workflow layer on top. The PSSP self-licensing application would be initiated when the product moves toward live payment processing at scale.
+Watchtower MVP operates under its licensed PSP partner's CBN authorisation. This is standard practice for early-stage Nigerian payment products — the PSP partner is the licenced entity for execution; Watchtower is the workflow layer on top. The PSSP self-licensing application would be initiated when the product moves toward live payment processing at scale.
 
 ---
 
@@ -74,9 +74,9 @@ PayOps MVP operates under its licensed PSP partner's CBN authorisation. This is 
 
 The Nigeria Data Protection Act (effective June 12, 2023) and its General Application and Implementation Directive (GAID, 2025) set the current data protection obligations.
 
-Key obligations and PayOps's position:
+Key obligations and Watchtower's position:
 
-| NDPA obligation | PayOps position |
+| NDPA obligation | Watchtower position |
 |---|---|
 | Lawful basis for processing | Contractual necessity (payment workflow) + Legitimate interest (fraud prevention, audit trail) |
 | Data minimisation | Collect only what is needed for payment processing and compliance (no marketing data, no behavioural profiling) |
@@ -94,14 +94,14 @@ Key obligations and PayOps's position:
 
 The Federal Competition and Consumer Protection Commission (FCCPC) governs consumer protection in Nigeria under the Federal Competition and Consumer Protection Act (FCCPA) 2018.
 
-**PayOps's FCCPC exposure:**
+**Watchtower's FCCPC exposure:**
 
-| Regulation | Applies to PayOps? | Basis |
+| Regulation | Applies to Watchtower? | Basis |
 |---|---|---|
 | FCCPA 2018 (General Consumer Protection) | Yes | Any business dealing with consumers must maintain fair practices, provide clear disclosures, and operate a dispute resolution mechanism |
-| FCCPC Digital, Electronic, Online and Non-Traditional Consumer Lending Regulations 2025 | **No** | These regulations target digital lenders. PayOps does not extend credit — it orchestrates B2B payment workflows. No lending, no consumer credit, not in scope |
+| FCCPC Digital, Electronic, Online and Non-Traditional Consumer Lending Regulations 2025 | **No** | These regulations target digital lenders. Watchtower does not extend credit — it orchestrates B2B payment workflows. No lending, no consumer credit, not in scope |
 
-**Active FCCPC obligations for PayOps:**
+**Active FCCPC obligations for Watchtower:**
 - Fee disclosures must be clear and upfront before any transaction
 - Dispute resolution path must exist (Exception Queue serves this purpose for payment disputes)
 - Unfair commercial practices prohibited
@@ -110,11 +110,11 @@ The Federal Competition and Consumer Protection Commission (FCCPC) governs consu
 
 ## 4. AML Framework
 
-### How PayOps handles AML-adjacent transactions
+### How Watchtower handles AML-adjacent transactions
 
-PayOps is not a reporting entity under Nigeria's Money Laundering Prevention Act in the same way as a bank or MMO — it does not hold funds or originate transfers. However, as a PSSP, it operates within the CBN AML/CFT/CPF framework and has obligations to the Nigerian Financial Intelligence Unit (NFIU).
+Watchtower is not a reporting entity under Nigeria's Money Laundering Prevention Act in the same way as a bank or MMO — it does not hold funds or originate transfers. However, as a PSSP, it operates within the CBN AML/CFT/CPF framework and has obligations to the Nigerian Financial Intelligence Unit (NFIU).
 
-The compliance review gate is PayOps's primary AML-adjacent mechanism. It is not a cosmetic feature — it is the product's implementation of transaction monitoring at the workflow layer.
+The compliance review gate is Watchtower's primary AML-adjacent mechanism. It is not a cosmetic feature — it is the product's implementation of transaction monitoring at the workflow layer.
 
 **Compliance triggers and their AML rationale:**
 
@@ -127,7 +127,7 @@ The compliance review gate is PayOps's primary AML-adjacent mechanism. It is not
 | `AMBIGUOUS_MATCH` | Vendor KYB Jaro-Winkler score 0.70–0.84 at verification | Escalates marginal identity matches for review before funds are sent |
 
 **Suspicious Transaction Reporting:**
-In production, a PSSP must file Suspicious Transaction Reports (STRs) with the NFIU within 24 hours of identifying a suspicious transaction. PayOps's exception queue and compliance review gate generate the audit trail required to support STR filings. Formal NFIU reporting integration is a post-MVP compliance obligation.
+In production, a PSSP must file Suspicious Transaction Reports (STRs) with the NFIU within 24 hours of identifying a suspicious transaction. Watchtower's exception queue and compliance review gate generate the audit trail required to support STR filings. Formal NFIU reporting integration is a post-MVP compliance obligation.
 
 ### New CBN automated AML requirement (active)
 
@@ -136,7 +136,7 @@ On May 20, 2025, the CBN issued a directive requiring all digital payment servic
 - Non-bank financial institutions (including PSSPs): 24-month implementation window from May 2025 → **by May 2027**
 - Implementation roadmap submission to CBN: **June 10, 2026** (deadline)
 
-PayOps's compliance review queue and exception queue logic are the architectural foundation for meeting this requirement. The automated trigger evaluation at payment submission time is the in-product implementation of the "real-time monitoring" the directive requires.
+Watchtower's compliance review queue and exception queue logic are the architectural foundation for meeting this requirement. The automated trigger evaluation at payment submission time is the in-product implementation of the "real-time monitoring" the directive requires.
 
 ---
 
@@ -144,12 +144,12 @@ PayOps's compliance review queue and exception queue logic are the architectural
 
 These are live CBN directives that a PSSP launching today must be aware of:
 
-| Directive | Date issued | Obligation | PayOps impact |
+| Directive | Date issued | Obligation | Watchtower impact |
 |---|---|---|---|
 | Automated AML Systems (BSD/DIR/PUB/LAB/019/002) | May 2025 | Deploy automated real-time AML monitoring; submit implementation roadmap | Foundation is built (compliance review queue). Formal CBN submission and NFIU integration required pre-launch |
 | NRS Transaction Monitoring System Integration | March 16, 2026 | All PSSPs must integrate with Nigeria Revenue Service Transaction Monitoring System | Integration required before operating as a licenced PSSP |
-| Mandatory Dual Connectivity | December 2025 | Acquirers and processors must maintain active connections with both NIBSS and UPSL | Applies to PSSP at PSP integration layer, not to PayOps's application layer directly |
-| ISO 20022 Migration | August 2025 | Full migration to ISO 20022 payment messaging | PSP partner's responsibility; PayOps's webhook contract should be validated for ISO 20022 alignment |
+| Mandatory Dual Connectivity | December 2025 | Acquirers and processors must maintain active connections with both NIBSS and UPSL | Applies to PSSP at PSP integration layer, not to Watchtower's application layer directly |
+| ISO 20022 Migration | August 2025 | Full migration to ISO 20022 payment messaging | PSP partner's responsibility; Watchtower's webhook contract should be validated for ISO 20022 alignment |
 | NRS E-Invoicing Integration | Phase 2 deadline July 1, 2026 | PSSPs handling ₦1B–₦5B annual turnover must integrate NRS e-invoicing | Not applicable at MVP scale; becomes relevant at growth stage |
 
 > **PM NOTE:** The NRS TMS integration directive (March 2026) is the single most operationally impactful recent directive for a PSSP. It requires integration with the Nigeria Revenue Service's transaction monitoring layer — effectively giving the NRS real-time visibility into payment flows. This is a compliance obligation that must be scoped into the first production sprint, not deferred.

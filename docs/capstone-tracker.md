@@ -1,7 +1,7 @@
-# PayOps Control Tower — Capstone Tracker
+# Watchtower — Capstone Tracker
 
 **Program:** ProductDive Fintech PM Program
-**Option:** C — Own Problem (PayOps Control Tower)
+**Option:** C — Own Problem (Watchtower)
 **Last updated:** 2026-07-01 (all 6 deliverables complete)
 
 ---
@@ -182,7 +182,7 @@ Deploy to Vercel. Then Deliverable 6 (Retrospective) — do last after prototype
 
 ### What exists
 - `architecture-note.md` — Panel-ready Architecture Note:
-  - ASCII system position diagram showing PayOps as the orchestration layer between finance team and PSP/rails
+  - ASCII system position diagram showing Watchtower as the orchestration layer between finance team and PSP/rails
   - Money movement narrative (6 steps, PM language, no code)
   - Rails & Partners table (CAC API, NUBAN API, PSP, NIP) with simulated MVP caveat
   - PM annotation: why simulated PSP and why it's swappable without redesign
@@ -208,7 +208,7 @@ None — deliverable complete. Move to Deliverable 5 (Compliance Summary) — mo
 **Capstone requirement:** Panel will probe this harder than anything else.
 
 ### Checklist
-- [x] CBN PSP licence categories: which tier applies to PayOps in Nigeria?
+- [x] CBN PSP licence categories: which tier applies to Watchtower in Nigeria?
 - [x] Which licences MVP operates under vs. defers (and what "defers" means operationally)
 - [x] User data: what is collected, why, how stored and protected
 - [x] NDPA and FCCPC coverage
@@ -222,7 +222,7 @@ None — deliverable complete. Move to Deliverable 5 (Compliance Summary) — mo
   - CBN licence: PSSP confirmed (PSS category, sub-licence PSSP); permitted activities table; fund-holding prohibition confirmed; ₦100M standalone capital requirement; MVP operating under PSP partner licence
   - Data collected/protected: full data inventory table with legal basis (NDPA 2023), retention periods (6yr CITA), storage controls (NUBAN dual encryption, bcrypt, retention lock, DB role grants)
   - NDPA 2023: obligations table, enforcement notice (1,368 orgs August 2025), DPO/NDPC registration thresholds
-  - FCCPC: DEON 2025 Regulations confirmed NOT applicable (PayOps not a lender); FCCPA 2018 general obligations in scope
+  - FCCPC: DEON 2025 Regulations confirmed NOT applicable (Watchtower not a lender); FCCPA 2018 general obligations in scope
   - AML triggers: 5 compliance review triggers with AML rationale; NFIU STR filing obligation noted as post-MVP
   - Active directives table: 5 live CBN directives (May 2025 AML, March 2026 NRS TMS, Dec 2025 dual connectivity, Aug 2025 ISO 20022, NRS e-invoicing Phase 2)
   - 48-hour directive scenario: hour-by-hour response plan modelled on real March 2026 NRS TMS directive

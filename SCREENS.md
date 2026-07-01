@@ -1,4 +1,4 @@
-# PayOps Control Tower — Screen Design Brief
+# Watchtower — Screen Design Brief
 
 Use this document in **claude.ai** (the web app) to generate visual mockups.  
 Suggested prompt: *"Render [screen name] from this design brief as a full-page HTML/CSS mockup I can see in the preview."*  
@@ -27,7 +27,7 @@ Iterate in claude.ai until each screen looks right, then bring the final HTML/CS
 ## Layout shell
 
 **Sidebar** (fixed, 240px wide):
-- Top: "P" logomark in emerald square + "PayOps / Control Tower" wordmark
+- Top: "W" logomark in emerald square + "Watchtower / Payment oversight" wordmark
 - Nav items (with SVG icons, not emoji): Dashboard, Vendors, Payments, Compliance Queue, Exception Queue, Audit Log, Team
 - Active item: emerald-50 background, emerald-700 text, coloured icon
 - Bottom: user name + role badge, Update PIN link, Sign out
@@ -43,7 +43,7 @@ Iterate in claude.ai until each screen looks right, then bring the final HTML/CS
 **Layout:** Centered card, no sidebar. Full-height white or very light gray background.
 
 **Elements:**
-- Logomark (emerald square "P" + "PayOps Control Tower") — top of card, centred
+- Logomark (emerald square "W" + "Watchtower") — top of card, centred
 - Tagline below logo: *"Secure payment operations for Nigerian SMEs"* — 13px, gray-500
 - `Work Email` input
 - `Password` input
@@ -53,7 +53,7 @@ Iterate in claude.ai until each screen looks right, then bring the final HTML/CS
 **Design notes:**
 - Card should feel deliberate — slightly elevated (`shadow-sm` or `shadow-md`), white, rounded-xl, max-w-sm or max-w-md
 - No decorative gradients or illustrations
-- Consider a subtle left column on desktop (1/3 width) with a short list of what PayOps enforces: "Four-eyes approval", "CAC/NUBAN KYB verification", "NIP reconciliation" — a trust signal before login
+- Consider a subtle left column on desktop (1/3 width) with a short list of what Watchtower enforces: "Four-eyes approval", "CAC/NUBAN KYB verification", "NIP reconciliation" — a trust signal before login
 
 ---
 

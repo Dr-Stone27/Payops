@@ -1,4 +1,4 @@
-# Product Brief: PayOps Control Tower
+# Product Brief: Watchtower
 
 **Capstone Deliverable:** 1 — Product Brief
 **Document Status:** Complete — Panel-ready v1.0
@@ -43,7 +43,7 @@ Finance operations teams at Nigerian SMEs will adopt a structured payment workfl
 - Full immutable audit log
 
 **Compliance Angle**
-The product does not hold customer funds. It acts as a workflow layer between the SME and their existing licensed PSP partner. In MVP, PayOps operates under the PSP partner's CBN licence umbrella while the company pursues its own Payment Solution Service Provider (PSSP) classification under the CBN PSP Framework 2020.
+The product does not hold customer funds. It acts as a workflow layer between the SME and their existing licensed PSP partner. In MVP, Watchtower operates under the PSP partner's CBN licence umbrella while the company pursues its own Payment Solution Service Provider (PSSP) classification under the CBN PSP Framework 2020.
 
 **Success Metrics**
 - Activation: Vendor & Request Onboarding Rate
@@ -128,17 +128,17 @@ The five metrics below measure whether the product is working as a payment opera
 
 ### 5. Strategic Scope (The Guardrails)
 
-PayOps is a **workflow-control orchestration layer**. It is not a bank, not a PSP, and not an accounting tool. These guardrails are not temporary constraints — they define the product category.
+Watchtower is a **workflow-control orchestration layer**. It is not a bank, not a PSP, and not an accounting tool. These guardrails are not temporary constraints — they define the product category.
 
 | Guardrail | What this means | Why it matters |
 |---|---|---|
-| **No fund custody** | PayOps does not hold, pool, or move customer money directly. All fund movement goes through a licensed PSP partner | Keeps the CBN regulatory path lighter (PSSP, not Payment Service Bank). Reduces operational risk. Lowers the trust barrier for adoption |
-| **No proprietary ledger** | PayOps is not a source of truth for balances. It is a source of truth for workflow state (approvals, audit logs, reconciliation outcomes) | Prevents scope creep into accounting/ERP territory. Finance teams keep their existing accounting tool |
+| **No fund custody** | Watchtower does not hold, pool, or move customer money directly. All fund movement goes through a licensed PSP partner | Keeps the CBN regulatory path lighter (PSSP, not Payment Service Bank). Reduces operational risk. Lowers the trust barrier for adoption |
+| **No proprietary ledger** | Watchtower is not a source of truth for balances. It is a source of truth for workflow state (approvals, audit logs, reconciliation outcomes) | Prevents scope creep into accounting/ERP territory. Finance teams keep their existing accounting tool |
 | **Domestic NGN only (MVP)** | All MVP payments are NGN to Nigerian bank accounts (NUBAN). No FX, no cross-border | Removes CBN FX licence requirement from MVP. Single-currency reconciliation logic. Post-MVP expansion path exists |
 | **B2B vendor payments only (MVP)** | Payroll, petty cash, and consumer disbursements are out of scope for MVP | Payroll requires PAYE/statutory compliance logic. Keeps the MVP focused on the highest-value use case for the target persona |
-| **Workflow orchestration, not process automation** | PayOps does not auto-approve payments. Every payment that reaches execution has a human Checker's PIN on it | Dual-control is the product's core value. Removing the human from the loop removes the audit trail value |
+| **Workflow orchestration, not process automation** | Watchtower does not auto-approve payments. Every payment that reaches execution has a human Checker's PIN on it | Dual-control is the product's core value. Removing the human from the loop removes the audit trail value |
 
-> **PM ANNOTATION — CBN licence tier (OPD-03 — partially resolved):** The panel will ask which CBN licence tier applies. The current position: in MVP, PayOps operates under the PSP partner's licence umbrella, which is standard practice for early-stage Nigerian fintech products that are building on top of a licensed partner. As the product scales, the relevant self-licensing path is the **Payment Solution Service Provider (PSSP)** tier under the CBN Regulatory Framework for Payment Service Providers (2020). PSSP covers technology providers that build payment infrastructure — orchestration, workflow tools, reconciliation layers — without themselves moving funds. It does not require the same capital requirements as a Payment Service Bank or PTSP. This classification is a defended position but requires formal legal confirmation from a CBN-specialist lawyer before a production launch. It is noted as an open item (⏳) in the Requirements Document and Compliance Summary tracker.
+> **PM ANNOTATION — CBN licence tier (OPD-03 — partially resolved):** The panel will ask which CBN licence tier applies. The current position: in MVP, Watchtower operates under the PSP partner's licence umbrella, which is standard practice for early-stage Nigerian fintech products that are building on top of a licensed partner. As the product scales, the relevant self-licensing path is the **Payment Solution Service Provider (PSSP)** tier under the CBN Regulatory Framework for Payment Service Providers (2020). PSSP covers technology providers that build payment infrastructure — orchestration, workflow tools, reconciliation layers — without themselves moving funds. It does not require the same capital requirements as a Payment Service Bank or PTSP. This classification is a defended position but requires formal legal confirmation from a CBN-specialist lawyer before a production launch. It is noted as an open item (⏳) in the Requirements Document and Compliance Summary tracker.
 
 ---
 

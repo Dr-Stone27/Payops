@@ -1,4 +1,4 @@
-# Retrospective: PayOps Control Tower
+# Retrospective: Watchtower
 
 **Capstone Deliverable:** 6 — Retrospective
 **Document Status:** v1.1 — Panel-ready
@@ -37,7 +37,7 @@ This was corrected. The user journey map now covers four journeys, three role-sp
 
 The requirements document acknowledges explicitly that there is no OCR-based validation of invoice amounts. A Maker enters ₦3,200,000 manually. The invoice PDF shows ₦3,200,000. The Checker sees both side by side and is expected to verify they match visually. The acceptance criteria adds a UI requirement — both values visible simultaneously — specifically to compensate for this absence.
 
-This is a reasonable MVP tradeoff. But it is worth being direct about what it means in practice: the primary fraud control on invoice amount accuracy is a human being looking at two numbers on the same screen. For a product whose entire value proposition is removing human error from the payment process, this is a structural irony. It is not fatal — the Checker's PIN is still on the record, and the audit trail captures who reviewed what. But if a Checker approves a payment for ₦3,200,000 against an invoice for ₦320,000 because they misread a zero, PayOps has no automatic catch for that. The reconciliation engine would settle and reconcile that payment as correct because the PSP transferred exactly what was requested.
+This is a reasonable MVP tradeoff. But it is worth being direct about what it means in practice: the primary fraud control on invoice amount accuracy is a human being looking at two numbers on the same screen. For a product whose entire value proposition is removing human error from the payment process, this is a structural irony. It is not fatal — the Checker's PIN is still on the record, and the audit trail captures who reviewed what. But if a Checker approves a payment for ₦3,200,000 against an invoice for ₦320,000 because they misread a zero, Watchtower has no automatic catch for that. The reconciliation engine would settle and reconcile that payment as correct because the PSP transferred exactly what was requested.
 
 In a production context, OCR invoice extraction is the next meaningful fraud control after maker-checker approval. It is not a nice-to-have feature. It is the gap between "the Checker has to be careful" and "the system catches what the Checker misses."
 
@@ -45,7 +45,7 @@ In a production context, OCR invoice extraction is the next meaningful fraud con
 
 ## 2. Next Sprint Priorities
 
-If PayOps were to continue past this MVP, the next three priorities in order are:
+If Watchtower were to continue past this MVP, the next three priorities in order are:
 
 ### Priority 1 — Live PSP Integration
 
@@ -135,11 +135,11 @@ When compliance research began, the working assumption was that the primary regu
 
 What was not anticipated was the March 2026 CBN directive requiring all PSSPs to integrate with the Nigeria Revenue Service Transaction Monitoring System. This directive was issued three months before this capstone was submitted. It requires real-time visibility into payment flows by the NRS — which means a PSSP operating without NRS TMS integration is not operating in a compliance-lite zone, it is operating in active non-compliance with a current directive.
 
-This changes the go-to-market calculus materially. The original framing was: PayOps operates under the PSP partner's licence in MVP, pursues its own PSSP licence at scale. The NRS TMS directive means that the moment PayOps self-licences as a PSSP, it inherits an integration obligation that is not trivial to fulfil. The implementation roadmap submission deadline was June 10, 2026. Any production launch plan must account for the fact that this deadline has passed and that engaging CBN on an expedited pathway is now the correct first action, not a growth-stage consideration.
+This changes the go-to-market calculus materially. The original framing was: Watchtower operates under the PSP partner's licence in MVP, pursues its own PSSP licence at scale. The NRS TMS directive means that the moment Watchtower self-licences as a PSSP, it inherits an integration obligation that is not trivial to fulfil. The implementation roadmap submission deadline was June 10, 2026. Any production launch plan must account for the fact that this deadline has passed and that engaging CBN on an expedited pathway is now the correct first action, not a growth-stage consideration.
 
 This was not visible at the start because it required reading the current regulatory environment, not the 2020 framework documents. The compliance summary identifies it explicitly in Section 5 and flags it as the single most operationally impactful recent directive for a PSSP launching today. But finding it required active research rather than framework knowledge — and that research happened late in the build, not before the architecture was designed.
 
-The architecture is not broken by this discovery. PayOps's compliance review queue and real-time trigger evaluation are, as the compliance summary notes, the correct architectural foundation for NRS TMS integration. The direction of travel is right. The timeline to compliance is more compressed than initially anticipated.
+The architecture is not broken by this discovery. Watchtower's compliance review queue and real-time trigger evaluation are, as the compliance summary notes, the correct architectural foundation for NRS TMS integration. The direction of travel is right. The timeline to compliance is more compressed than initially anticipated.
 
 ---
 
@@ -152,7 +152,7 @@ After v1.0, the product went through a second, deeper pass: a connective audit o
 - **The compliance threshold was 10× too low.** `HIGH_VALUE` fired at ₦500,000, not the ₦5,000,000 the code comment, the UI copy, and every deliverable claim — a digit-grouping typo (`500_000_00`). The same character as the NIP-fee error in §3: precise, well-formatted, wrong.
 - **The dashboard is a ledger, not a control tower.** It shows payments already made; a finance lead opening a product called a *Control Tower* needs "what needs my approval / what's at risk / recent control events." This single change moves it from a log to a control room.
 - **Dead surface.** Four of six exception categories, a "Settled" filter, and an "Acknowledge" button were unreachable or non-functional — depth the product could not actually produce.
-- **Naming split, now resolved.** The live app is "Watchtower"; the deliverables said "PayOps Control Tower." The product is **Watchtower**.
+- **Naming split, now resolved.** The live app is "Watchtower"; the deliverables carried the old working title until this build renamed them to match. The product is **Watchtower**.
 
 ### The strategic question, answered honestly
 The sharper challenge raised mid-review: if control + verification + audit is a *feature* inside Duplo / Ramp / Bujeti, why would anyone pay for it standalone? Research answered it:

@@ -1,8 +1,8 @@
-# PayOps Control Tower
+# Watchtower
 
 Payment operations orchestration layer for Nigerian SMEs. Built as a capstone submission for the ProductDive Fintech PM Program (Option C — Own Problem).
 
-PayOps is a **non-funds-holding** workflow product that gives finance teams one workspace to verify vendors, approve payment requests, track settlement, and reconcile invoices — without needing a full ERP. It orchestrates the audit trail around money that moves through a licensed PSP partner.
+Watchtower is a **non-funds-holding** workflow product that gives finance teams one workspace to verify vendors, approve payment requests, track settlement, and reconcile invoices — without needing a full ERP. It orchestrates the audit trail around money that moves through a licensed PSP partner.
 
 ---
 
@@ -326,4 +326,4 @@ The prototype was built after a full spec → audit → resolution cycle:
 
 ---
 
-*PayOps Control Tower v0.1 MVP · June 2026*
+*Watchtower v0.1 MVP · June 2026*
