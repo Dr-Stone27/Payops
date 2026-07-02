@@ -266,10 +266,18 @@ export default function PaymentDetailPage() {
 
       {/* Compliance review */}
       {payment.status === "compliance_review" && (
-        <div style={{ background: "#fdeee2", border: "1px solid #f6cdb0", borderRadius: 13, padding: "16px 20px", marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#9a4513", marginBottom: 4 }}>Compliance Review Required</div>
-          <div style={{ fontSize: 12.5, color: "#8a4010", marginBottom: 14 }}>
-            <strong>Trigger:</strong> {TRIGGER_LABELS[payment.complianceTrigger ?? ""] ?? payment.complianceTrigger}
+        <div style={{ background: "#fff", border: "1px solid #f6cdb0", borderRadius: 13, padding: "18px 20px", marginBottom: 14, boxShadow: "0 0 0 3px rgba(224,114,53,.06)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 13, marginBottom: 14 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: "#fdeee2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e07235" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0c1d2e", marginBottom: 3 }}>Compliance review required</div>
+              <div style={{ fontSize: 12.5, color: "#3f4d5a", lineHeight: 1.6 }}>
+                Watchtower held this payment before approval: <strong style={{ color: "#9a4513" }}>{TRIGGER_LABELS[payment.complianceTrigger ?? ""] ?? payment.complianceTrigger}</strong>.
+                A checker who did not raise it must clear or block it — the decision lands on the audit trail.
+              </div>
+            </div>
           </div>
           {error && <div style={{ marginBottom: 12, padding: "9px 12px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 8, fontSize: 12.5, color: "#b3261e" }}>{error}</div>}
           {isChecker && !isMaker && !isComplianceResolver ? (
@@ -284,10 +292,10 @@ export default function PaymentDetailPage() {
               </button>
             </div>
           ) : (
-            <div style={{ fontSize: 12.5, color: "#8a4010" }}>
+            <div style={{ fontSize: 12.5, color: "#8a4010", background: "#fef6ee", border: "1px solid #f6cdb0", borderRadius: 9, padding: "10px 13px", lineHeight: 1.55 }}>
               {isMaker
-                ? "You created this request and cannot action the compliance review."
-                : "Awaiting Checker review."}
+                ? "You raised this request, so the review isn't yours to action — a different checker decides. This separation is recorded on the audit trail."
+                : "Awaiting a checker's decision."}
             </div>
           )}
         </div>
