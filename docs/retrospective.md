@@ -1,9 +1,10 @@
 # Retrospective: Watchtower
 
 **Capstone Deliverable:** 6 — Retrospective
-**Document Status:** v1.1 — Panel-ready
-**Last updated:** 2026-07-01
-**v1.1 adds §5:** post-build product audit, the strategic reframe (Watchtower / assurance-over-existing-rails), and the build plan.
+**Document Status:** v1.2 — Panel-ready
+**Last updated:** 2026-07-02
+**v1.2 adds §6:** the build cycle executed — every fix from §5 shipped and verified — plus two further "where AI fell short" cases from the build itself.
+**v1.1 added §5:** post-build product audit, the strategic reframe (Watchtower / assurance-over-existing-rails), and the build plan.
 
 ---
 
@@ -166,3 +167,28 @@ The first market-research pass jumped straight to "sharpen the spine" and skippe
 
 ### Build plan
 Prioritised fixes with acceptance criteria are in `.claude/context/improvement-plan-phase3.md` and `BUILD.md`. Four decisions were confirmed: ₦5M threshold; rebuild settlement through shared **synchronous** reconciliation (serverless-safe); cut `STATUS_UNKNOWN`; wire `Acknowledge` as a real resolve action. §2's next-sprint priorities still hold, with **dashboard-as-control-tower** added as a pitch-critical item.
+
+---
+
+## 6. The Build Cycle Executed (v1.2 — 2026-07-02)
+
+§5 ended with a build plan. This section records that the plan was executed in full, what was verified, and — in this document's tradition — where AI fell short during the build itself.
+
+### What shipped
+
+Every fix from the improvement plan is now in production, each verified against its acceptance criteria on a live Postgres database before merge:
+
+- **Tier 1 (pitch-critical):** the Watchtower rename across all deliverables; the HIGH_VALUE threshold corrected from ₦500,000 to ₦5,000,000; a server-side amount guard; dead controls removed and "Acknowledge" wired as a real, audited resolve action; the dashboard rebuilt as a control tower (needs-me / at-risk / control events); and the settlement rebuild — the live approval path now runs through the same reconciliation logic as the signed webhook, creating real WebhookEvent records and running the NIP tolerance check in-request (serverless-safe, per §3's lesson). AMOUNT_MISMATCH is reachable from the product.
+- **Tier 2 (integrity):** the duplicate-NUBAN check broadened to all vendor records and re-checked at the approval gate — two vendors with the same bank account can no longer both reach approved; the manual compliance block stored honestly as COMPLIANCE_BLOCKED (with a data migration for historical rows); all ID generation moved from a Math.random() pseudo-cuid to crypto.randomUUID().
+- **Product surface:** a design language (documented in `docs/design-language.md`, referencing Mercury for feel and Modern Treasury for information design) applied with particular attention to the refusal states — the four-eyes block, the compliance hold, the exception queue — on the thesis that a control product is judged by how it says no. Onboarding state moved from browser localStorage to the user record, ending the re-onboarding of established users.
+- **Working controls re-verified after every change:** four-eyes (both rules), PIN lockout, version concurrency (parallel approvals produce exactly one success), tenant isolation, and the audit trail.
+
+### Where AI fell short, rounds five and six
+
+**The committed dev-only override.** To verify changes against a local Postgres, the build used a temporary swap of the database adapter — deliberately uncommitted, with its dependency installed without being saved. A broad `git add -A` during a design pass committed the swap anyway. Local builds kept passing (the dependency existed locally); the production deploy failed with a missing module. The failure signature matches §3 precisely: the artifact was correct in the context it knew and wrong under the deployment constraint, and the gap was invisible until the environment differed. The correction was procedural, not technical: deploy-critical changes are now verified with a clean install (`npm ci`), which reproduces the production condition, and the override is checked before any commit. The lesson: an AI agent's working state is part of the system, and it needs the same hygiene as code.
+
+**The onboarding walkthrough that never checked where it was — or who.** Two defects shipped together in the original walkthrough: each step declared which pages it belonged on, but the code never consulted that field, so banners appeared everywhere and a completion modal could cover any screen mid-task; and completion state lived in browser localStorage, so any new device or cleared cache re-onboarded a user who had been operating for weeks. Both were plausible-looking implementations that were never exercised from the user's seat. The first was caught by a code-level frontend audit; the second only by a human noticing. The fix moved walkthrough state to the database and inferred "already onboarded" from a user's actual activity — with the side lesson that client-side state is a poor home for anything the server is asked to have an opinion about.
+
+### The pattern, named
+
+Across six cases the failure mode never varied: fluent, well-formed output that was correct in some context other than the one that mattered — stale fee schedules, an invented state, a platform-hostile async pattern, a mis-grouped constant, a leaked dev override, unconsulted configuration. What caught them was never inspection alone. It was verification loops: primary-source research, line-by-line spec audits, live control-suite runs against a real database, clean-install builds, and screenshots read back at real size. The PM's job with AI tooling is not to write less code; it is to own the loops that make wrong output visible.
