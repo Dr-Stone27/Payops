@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { formatNaira } from "@/lib/compliance";
-import { avatarColor, getInitials } from "@/lib/design";
+import { getInitials } from "@/lib/design";
 import Link from "next/link";
 import AcknowledgeButton from "./AcknowledgeButton";
 import RetryButton from "./RetryButton";
@@ -71,7 +71,9 @@ export default async function ExceptionsPage() {
               desc: "This payment needs manual review.",
               actions: ["cancel"],
             };
-            const av = avatarColor(p.vendor.legalName);
+            // Neutral avatar inside red-bordered cards — the category chip
+            // carries the alarm; hash colors can collide into red-on-red.
+            const av = { bg: "#f1f3f5", fg: "#3f4d5a" };
             const ini = getInitials(p.vendor.legalName);
 
             return (

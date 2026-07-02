@@ -162,12 +162,7 @@ export default function PaymentDetailPage() {
   return (
     <div style={{ padding: "30px 36px 80px", maxWidth: 680, margin: "0 auto" }}>
       <div style={{ marginBottom: 24 }}>
-        <Link href="/payments" style={{ fontSize: 12.5, color: "#8a97a6", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 500 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          Payments
-        </Link>
-
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginTop: 12 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 11, background: vendorAv.bg, color: vendorAv.fg, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{vendorIni}</div>
             <div>
@@ -331,12 +326,25 @@ export default function PaymentDetailPage() {
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 12.5, color: "#6b7785", padding: "12px 14px", background: "#f5f6f8", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <span>
-                {isMaker ? "You created this request and cannot approve it (Maker-Checker rule)." :
-                 isComplianceResolver ? "You cleared the compliance review for this payment and cannot also approve it (four-eyes rule)." :
-                 "You do not have permission to approve this payment."}
-              </span>
+            <div style={{ padding: "16px 18px", background: "#f6f8f7", border: "1px solid #dcebe4", borderRadius: 11, display: "flex", alignItems: "flex-start", gap: 13 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: "#ecf6f1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0e7a5a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#0c1d2e", marginBottom: 4 }}>
+                  {isMaker ? "The maker-checker rule applies" :
+                   isComplianceResolver ? "The four-eyes rule applies" :
+                   "A checker must approve this"}
+                </div>
+                <div style={{ fontSize: 12.5, color: "#3f4d5a", lineHeight: 1.6 }}>
+                  {isMaker ? "You raised this request, so you cannot approve it — no payment leaves on one person's say-so. A different checker will review and approve with their PIN." :
+                   isComplianceResolver ? "You cleared this payment's compliance review, so a different checker must give the final approval. One person never holds both keys." :
+                   "You do not have permission to approve payments. An admin or owner completes this step."}
+                </div>
+                <div style={{ fontSize: 11.5, color: "#8a97a6", marginTop: 8 }}>
+                  This block is Watchtower working as designed — it is recorded on the audit trail.
+                </div>
+              </div>
               {isMaker && (
                 <button onClick={handleCancel} disabled={loading}
                   style={{ fontSize: 12, fontWeight: 600, color: "#b3261e", background: "transparent", border: "1px solid #f1c5c1", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", flexShrink: 0, opacity: loading ? 0.5 : 1 }}>

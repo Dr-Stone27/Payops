@@ -223,7 +223,7 @@ export default async function DashboardPage() {
                   <span style={{ width: 7, height: 7, borderRadius: "50%", background: meta.dot, flexShrink: 0 }} />
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: "#0c1d2e", width: 190, flexShrink: 0 }}>{meta.label}</span>
                   <span style={{ flex: 1, fontSize: 12, color: "#6b7785", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {e.user?.fullName ?? "System"}{e.detail ? ` — ${e.detail}` : ""}
+                    {e.user ? `${e.user.fullName}${e.detail ? ` — ${e.detail}` : ""}` : (e.detail ?? "Automatic")}
                   </span>
                   <span style={{ fontSize: 11.5, color: "#98a3b0", flexShrink: 0 }}>
                     {new Date(e.createdAt).toLocaleString("en-NG", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
