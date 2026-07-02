@@ -3,6 +3,10 @@ import { prisma } from "@/lib/db";
 import { formatNaira } from "@/lib/compliance";
 import { avatarColor, getInitials } from "@/lib/design";
 import Link from "next/link";
+import AcknowledgeButton from "./AcknowledgeButton";
+import RetryButton from "./RetryButton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CheckCircle2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -17,19 +21,9 @@ const CATEGORY: Record<string, { label: string; desc: string; actions: string[] 
     desc: "The amount that arrived differs from the invoice amount by more than the expected bank fee. Manual review is needed.",
     actions: ["acknowledge", "cancel"],
   },
-  STATUS_UNKNOWN: {
-    label: "Status Unknown",
-    desc: "No settlement confirmation received in 48 hours. The payment may be in transit or delayed at the bank. Contact your PSP for a status update.",
-    actions: ["cancel"],
-  },
-  PARTIAL_TRANCHE_SETTLEMENT: {
-    label: "Partial Tranche",
-    desc: "One or more tranches settled successfully but the sequence was interrupted. The vendor has received a partial amount.",
-    actions: ["cancel"],
-  },
   COMPLIANCE_REVIEW_TIMEOUT: {
-    label: "Compliance Timeout",
-    desc: "The compliance review was not completed within 48 hours. The request has been paused.",
+    label: "Compliance Blocked",
+    desc: "A checker blocked this payment during compliance review. It will not proceed. Cancel it, or raise a corrected request.",
     actions: ["cancel"],
   },
   ORPHANED_SETTLEMENT: {
@@ -44,10 +38,12 @@ export default async function ExceptionsPage() {
   if (!session) return null;
 
   const exceptions = await prisma.paymentRequest.findMany({
-    where: { businessId: session.businessId, status: "exception_queue" },
+    where: { businessId: session.businessId, status: "exception_queue", acknowledgedAt: null },
     include: { vendor: true, maker: { select: { fullName: true } } },
     orderBy: { updatedAt: "desc" },
   });
+
+  const isChecker = ["owner", "admin"].includes(session.role);
 
   return (
     <div style={{ padding: "30px 36px 80px", maxWidth: 760, margin: "0 auto" }}>
@@ -59,16 +55,13 @@ export default async function ExceptionsPage() {
       </div>
 
       {exceptions.length === 0 ? (
-        <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, padding: "52px 24px", textAlign: "center" }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#e6faf4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0e7a5a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 6 9 17l-5-5"/>
-            </svg>
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#3f4d5a" }}>No exceptions</div>
-          <div style={{ fontSize: 12.5, color: "#98a3b0", margin: "6px auto 0", maxWidth: 400, lineHeight: 1.55 }}>
-            Payments that fail, time out, or need attention will appear here with plain-language guidance on what to do next.
-          </div>
+        <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13 }}>
+          <EmptyState
+            icon={CheckCircle2}
+            tone="positive"
+            title="No open exceptions"
+            body="Payments that fail or mismatch will appear here with plain-language guidance on what to do next. Right now, everything has settled cleanly."
+          />
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -115,16 +108,11 @@ export default async function ExceptionsPage() {
                     View details
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                   </Link>
-                  {cat.actions.includes("retry") && (
-                    <Link href={`/payments/${p.id}`}
-                      style={{ height: 36, padding: "0 14px", border: "none", borderRadius: 8, background: "#fdeceb", color: "#b3261e", fontSize: 12.5, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-                      Retry payment
-                    </Link>
+                  {cat.actions.includes("retry") && isChecker && (
+                    <RetryButton paymentId={p.id} />
                   )}
-                  {cat.actions.includes("acknowledge") && (
-                    <span style={{ height: 36, padding: "0 14px", border: "1px solid #e8eaed", borderRadius: 8, background: "#f5f6f8", color: "#6b7785", fontSize: 12.5, fontWeight: 500, display: "inline-flex", alignItems: "center" }}>
-                      Acknowledge
-                    </span>
+                  {cat.actions.includes("acknowledge") && isChecker && (
+                    <AcknowledgeButton paymentId={p.id} />
                   )}
                 </div>
               </div>

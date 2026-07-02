@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { formatNaira } from "@/lib/compliance";
 import { STATUS_BADGE, avatarColor, getInitials } from "@/lib/design";
 import Link from "next/link";
+import { ClickableRow } from "@/components/ui/ClickableRow";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { CreditCard, ListFilter } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +14,6 @@ const ALL_STATUSES = [
   { key: "pending_approval", label: "Pending" },
   { key: "compliance_review", label: "Compliance" },
   { key: "processing", label: "Processing" },
-  { key: "settled", label: "Settled" },
   { key: "reconciled", label: "Reconciled" },
   { key: "exception_queue", label: "Exception" },
   { key: "cancelled", label: "Cancelled" },
@@ -73,23 +75,25 @@ export default async function PaymentsPage({
 
       <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, overflow: "hidden" }}>
         {payments.length === 0 ? (
-          <div style={{ padding: "52px 24px", textAlign: "center" }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#3f4d5a" }}>No payments {activeFilter ? "in this state" : "yet"}</div>
-            <div style={{ fontSize: 12.5, color: "#98a3b0", margin: "6px auto 16px", maxWidth: 360, lineHeight: 1.5 }}>
-              {activeFilter
-                ? "Try selecting a different filter."
-                : approvedVendorCount > 0
-                  ? "Ready to go — click '+ New payment' above to create your first payment request."
-                  : "Add and approve at least one vendor before submitting a payment request."}
-            </div>
-            {!activeFilter && (
-              <Link
-                href={approvedVendorCount > 0 ? "/payments/new" : "/vendors/new"}
-                style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 9, padding: "9px 16px", textDecoration: "none", display: "inline-block" }}>
-                {approvedVendorCount > 0 ? "Create first payment" : "Add first vendor"}
-              </Link>
-            )}
-          </div>
+          activeFilter ? (
+            <EmptyState
+              icon={ListFilter}
+              title="No payments in this state"
+              body="Nothing is resting here right now. Switch to another filter, or view all payments."
+              ctaLabel="View all payments"
+              ctaHref="/payments"
+            />
+          ) : (
+            <EmptyState
+              icon={CreditCard}
+              title="No payments yet"
+              body={approvedVendorCount > 0
+                ? "You have a verified vendor — raise your first invoice-backed payment request and send it for approval."
+                : "Add and verify at least one vendor before submitting a payment request."}
+              ctaLabel={approvedVendorCount > 0 ? "Create first payment" : "Add first vendor"}
+              ctaHref={approvedVendorCount > 0 ? "/payments/new" : "/vendors/new"}
+            />
+          )
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -107,7 +111,7 @@ export default async function PaymentsPage({
                 const makerAv = avatarColor(p.maker.fullName);
                 const makerIni = getInitials(p.maker.fullName);
                 return (
-                  <tr key={p.id} style={{ borderTop: "1px solid #f1f3f5" }}>
+                  <ClickableRow key={p.id} href={`/payments/${p.id}`}>
                     <td style={{ padding: "11px 19px" }}>
                       <Link href={`/payments/${p.id}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
                         <div style={{ width: 28, height: 28, borderRadius: 8, background: av.bg, color: av.fg, fontSize: 10.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{ini}</div>
@@ -131,7 +135,7 @@ export default async function PaymentsPage({
                     <td style={{ padding: "11px 19px 11px 12px", fontSize: 12.5, color: "#6b7785" }}>
                       {new Date(p.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
                     </td>
-                  </tr>
+                  </ClickableRow>
                 );
               })}
             </tbody>

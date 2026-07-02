@@ -1,4 +1,4 @@
-# Requirements Document: PayOps Control Tower
+# Requirements Document: Watchtower
 
 **Document Status:** Complete — Panel-ready v1.0
 **Target Market:** Nigeria
@@ -10,7 +10,7 @@
 
 ## Overview
 
-Nigerian SME finance teams manage the critical stages before and after a B2B payment — vendor verification, invoice matching, maker-checker authorization, settlement tracking, and audit logging — across a fragmented web of spreadsheets, manual WhatsApp threads, and disconnected banking portals. PayOps Control Tower acts as a centralised orchestration layer that provides one workspace to solve this.
+Nigerian SME finance teams manage the critical stages before and after a B2B payment — vendor verification, invoice matching, maker-checker authorization, settlement tracking, and audit logging — across a fragmented web of spreadsheets, manual WhatsApp threads, and disconnected banking portals. Watchtower acts as a centralised orchestration layer that provides one workspace to solve this.
 
 This MVP does not hold funds. It orchestrates the workflow and logs the audit trail around the movement of funds by a licensed PSP partner.
 
@@ -32,7 +32,7 @@ This MVP does not hold funds. It orchestrates the workflow and logs the audit tr
 
 ### Story 1 — Business Onboarding & KYB
 
-**As a** business owner, **I want to** create an account and complete my business KYB **so that** I can access the PayOps workspace and onboard my finance team.
+**As a** business owner, **I want to** create an account and complete my business KYB **so that** I can access the Watchtower workspace and onboard my finance team.
 
 **Flow:**
 1. User selects "Create Account" and provides registration details.

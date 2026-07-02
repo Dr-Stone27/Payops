@@ -1,4 +1,4 @@
-# PayOps Control Tower — Spec Resolution v1.0
+# Watchtower — Spec Resolution v1.0
 
 **Date:** 2026-06-13
 **Resolves:** spec-review-v1.0 (all findings)
@@ -369,7 +369,7 @@ Any other variance → `exception_queue` with `exceptionCategory = 'AMOUNT_MISMA
 - Cancel
 
 **VENDOR_BLOCKED (post-processing)** — remove "Initiate reversal". Permitted actions:
-- Cancel (marks `PaymentRequest` as `cancelled` in PayOps; any subsequent settlement webhook routes to `ORPHANED_SETTLEMENT`)
+- Cancel (marks `PaymentRequest` as `cancelled` in Watchtower; any subsequent settlement webhook routes to `ORPHANED_SETTLEMENT`)
 
 Tranche reversal is not supported in MVP. Add to §13 Out of Scope.
 
@@ -434,7 +434,7 @@ See `Invitation` table in §2. Token expiry: 72 hours. One pending invitation pe
 
 ```json
 {
-  "paymentRequestId":    "string (UUID) — PayOps reference echoed back",
+  "paymentRequestId":    "string (UUID) — Watchtower reference echoed back",
   "transactionId":       "string (UUID) — PSP-issued; unique per settlement event; used for deduplication",
   "settlementStatus":    "SUCCESS | FAILED | PENDING",
   "settledAmount":       "integer (kobo)",
@@ -449,10 +449,10 @@ See `Invitation` table in §2. Token expiry: 72 hours. One pending invitation pe
 
 PSP simulator signs every outbound webhook:
 - Input: raw request body bytes (before JSON parsing)
-- Key: `PSP_WEBHOOK_SECRET` env var — shared between simulator and PayOps orchestration service
+- Key: `PSP_WEBHOOK_SECRET` env var — shared between simulator and Watchtower orchestration service
 - Header: `X-PSP-Signature: sha256={hex-encoded HMAC}`
 
-PayOps webhook receiver:
+Watchtower webhook receiver:
 1. Read raw body as bytes before any framework JSON parsing
 2. Compute `HMAC-SHA256(raw_body, PSP_WEBHOOK_SECRET)`
 3. Compare with `X-PSP-Signature` using constant-time comparison

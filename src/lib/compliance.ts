@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 
-const HIGH_VALUE_THRESHOLD_KOBO = 500_000_00; // ₦5,000,000
+const HIGH_VALUE_THRESHOLD_KOBO = 500_000_000; // ₦5,000,000
 
 export async function detectComplianceTrigger(
   businessId: string,

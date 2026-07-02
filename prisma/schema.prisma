@@ -90,6 +90,8 @@ model PaymentRequest {
   retentionLocked            Boolean   @default(false)
   transactionReference       String?
   settledAmount              Int?
+  acknowledgedAt             DateTime?
+  acknowledgedBy             String?
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
 

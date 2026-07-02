@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { approveVendor } from "@/actions/vendors";
 import { kybColor, avatarColor, getInitials, KYB_BADGE } from "@/lib/design";
+import { useToast } from "@/components/ui/Toast";
 
 interface Vendor {
   id: string; legalName: string; cacNumber: string; nubanLast4: string;
@@ -26,12 +27,17 @@ export default function VendorDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [vendor, setVendor] = useState<Vendor | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [justification, setJustification] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetch(`/api/vendors/${id}`).then(r => r.json()).then(setVendor);
+    fetch(`/api/vendors/${id}`).then(r => r.json()).then(d => {
+      if (!d?.id) { setNotFound(true); return; }
+      setVendor(d);
+    }).catch(() => setNotFound(true));
   }, [id]);
 
   async function handleApprove() {
@@ -39,8 +45,21 @@ export default function VendorDetailPage() {
     setError("");
     const result = await approveVendor(id, justification);
     if (result?.error) { setError(result.error); setLoading(false); }
-    else router.push("/vendors");
+    else {
+      toast("Vendor approved — they can now receive payment requests.");
+      router.push("/vendors");
+    }
   }
+
+  if (notFound) return (
+    <div style={{ padding: "60px 36px", textAlign: "center" }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: "#3f4d5a", marginBottom: 6 }}>Vendor not found</div>
+      <div style={{ fontSize: 12.5, color: "#98a3b0", marginBottom: 18 }}>It may have been removed, or the link is incorrect.</div>
+      <Link href="/vendors" style={{ fontSize: 12.5, fontWeight: 600, color: "#fff", background: "#0e7a5a", borderRadius: 9, padding: "9px 16px", textDecoration: "none", display: "inline-block" }}>
+        Back to vendors
+      </Link>
+    </div>
+  );
 
   if (!vendor) return (
     <div style={{ padding: 36, display: "flex", alignItems: "center", gap: 10, color: "#8a97a6", fontSize: 13 }}>

@@ -39,8 +39,8 @@ export function TopBar({ session }: { session: Session }) {
   if (!page) {
     const segments = pathname.split("/").filter(Boolean);
     if (segments[0] === "payments" && segments[1]) {
-      page = { label: segments[1].toUpperCase(), parent: "Payments", parentHref: "/payments" };
-      dynamicLabel = segments[1].toUpperCase();
+      page = { label: "Payment detail", parent: "Payments", parentHref: "/payments" };
+      dynamicLabel = "Payment detail";
     } else if (segments[0] === "vendors" && segments[1]) {
       page = { label: "KYB Review", parent: "Vendors", parentHref: "/vendors" };
     }
@@ -80,20 +80,6 @@ export function TopBar({ session }: { session: Session }) {
           </span>
         </div>
       )}
-
-      {/* Search */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, height: 36, width: 210, border: "1px solid #e4e7eb", borderRadius: 9, padding: "0 11px", background: "#fbfcfd", color: "#9aa6b2" }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <span style={{ fontSize: 12.5, whiteSpace: "nowrap" }}>Search payments…</span>
-        <span style={{ marginLeft: "auto", fontSize: 10.5, fontWeight: 600, color: "#aeb8c2", border: "1px solid #e4e7eb", borderRadius: 5, padding: "1px 5px", background: "#fff", fontFamily: "var(--font-mono)" }}>⌘K</span>
-      </div>
-
-      {/* Bell */}
-      <button style={{ width: 36, height: 36, border: "1px solid #e4e7eb", borderRadius: 9, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5b6b7b" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-      </button>
-
-      <div style={{ width: 1, height: 26, background: "#e8eaed" }} />
 
       {/* User menu */}
       <div style={{ position: "relative" }}>
