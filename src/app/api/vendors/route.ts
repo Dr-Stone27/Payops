@@ -5,7 +5,7 @@ import { computeJaroWinkler, getKybDecision, hashNuban, encryptNuban, simulateKy
 import { log } from "@/lib/audit";
 
 function uid() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return crypto.randomUUID();
 }
 
 export async function GET() {
@@ -39,10 +39,10 @@ export async function POST(req: NextRequest) {
 
   const nubanHash = hashNuban(nuban);
   const duplicate = await prisma.vendor.findFirst({
-    where: { businessId: session.businessId, nubanHash, kybStatus: "approved" },
+    where: { businessId: session.businessId, nubanHash },
   });
   if (duplicate) {
-    return NextResponse.json({ error: "This bank account is already linked to an approved vendor." }, { status: 409 });
+    return NextResponse.json({ error: `This bank account is already registered to ${duplicate.legalName}.` }, { status: 409 });
   }
 
   const { cacName, nubanName, fixedScore } = simulateKybLookup(legalName, nuban);

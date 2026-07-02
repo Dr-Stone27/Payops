@@ -8,7 +8,7 @@ import { computeJaroWinkler, getKybDecision, hashNuban, encryptNuban, simulateKy
 import { log } from "@/lib/audit";
 
 function cuid() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return crypto.randomUUID();
 }
 
 export async function getVendors() {
@@ -38,11 +38,13 @@ export async function addVendor(formData: FormData) {
   }
 
   const nubanHash = hashNuban(nuban);
+  // Check ALL vendor records, not just approved — otherwise two vendors with
+  // the same account can both reach approved via the manual-review path.
   const duplicate = await prisma.vendor.findFirst({
-    where: { businessId: session.businessId, nubanHash, kybStatus: "approved" },
+    where: { businessId: session.businessId, nubanHash },
   });
   if (duplicate) {
-    return { error: "This bank account is already linked to an approved vendor." };
+    return { error: `This bank account is already registered to ${duplicate.legalName}.` };
   }
 
   const { cacName, nubanName, fixedScore } = simulateKybLookup(legalName, nuban);
@@ -93,6 +95,15 @@ export async function approveVendor(vendorId: string, justification: string) {
   });
   if (!vendor) return { error: "Vendor not found." };
   if (vendor.kybStatus === "approved") return { error: "Vendor is already approved." };
+
+  // Account-integrity re-check at the approval gate: legacy duplicates that
+  // predate the broadened add-time check must not both reach approved.
+  const approvedDuplicate = await prisma.vendor.findFirst({
+    where: { businessId: session.businessId, nubanHash: vendor.nubanHash, kybStatus: "approved", id: { not: vendor.id } },
+  });
+  if (approvedDuplicate) {
+    return { error: `Cannot approve: this bank account is already approved for ${approvedDuplicate.legalName}.` };
+  }
 
   await prisma.vendor.update({
     where: { id: vendorId },

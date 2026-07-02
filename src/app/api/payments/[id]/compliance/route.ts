@@ -43,7 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       where: { id: paymentId },
       data: {
         status: "exception_queue",
-        exceptionCategory: "COMPLIANCE_REVIEW_TIMEOUT",
+        exceptionCategory: "COMPLIANCE_BLOCKED",
         complianceReviewResolvedBy: session.userId,
       },
     });

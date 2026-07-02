@@ -22,6 +22,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!vendor) return NextResponse.json({ error: "Vendor not found." }, { status: 404 });
   if (vendor.kybStatus === "approved") return NextResponse.json({ error: "Vendor is already approved." }, { status: 409 });
 
+  // Account-integrity re-check at the approval gate (mirrors approveVendor action)
+  const approvedDuplicate = await prisma.vendor.findFirst({
+    where: { businessId: session.businessId, nubanHash: vendor.nubanHash, kybStatus: "approved", id: { not: vendor.id } },
+  });
+  if (approvedDuplicate) {
+    return NextResponse.json({ error: `Cannot approve: this bank account is already approved for ${approvedDuplicate.legalName}.` }, { status: 409 });
+  }
+
   await prisma.vendor.update({
     where: { id },
     data: {

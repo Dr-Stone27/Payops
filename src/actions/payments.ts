@@ -12,7 +12,7 @@ import { log } from "@/lib/audit";
 const PSP_LIMIT_KOBO = 1_000_000_000; // ₦10,000,000
 
 function cuid() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return crypto.randomUUID();
 }
 
 export async function createPayment(formData: FormData) {
@@ -169,7 +169,7 @@ export async function clearComplianceReview(paymentId: string, decision: "clear"
       where: { id: paymentId },
       data: {
         status: "exception_queue",
-        exceptionCategory: "COMPLIANCE_REVIEW_TIMEOUT",
+        exceptionCategory: "COMPLIANCE_BLOCKED",
         complianceReviewResolvedBy: session.userId,
       },
     });
