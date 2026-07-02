@@ -1,10 +1,8 @@
-// TEMPORARY local-verification override (uncommitted): the Neon serverless
-// driver needs Neon's WebSocket proxy; plain pg adapter for localhost tests.
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaNeon } from "@prisma/adapter-neon";
 
 function createPrisma() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
   return new PrismaClient({ adapter });
 }
 
