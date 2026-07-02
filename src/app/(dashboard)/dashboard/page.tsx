@@ -199,7 +199,7 @@ export default async function DashboardPage() {
                   <span style={{ fontSize: 12, fontWeight: 500, color: "#6b7785" }}>{c.label}</span>
                   {c.urgent && <span style={{ fontSize: 10, fontWeight: 600, color: "#b3261e", background: "#fdeceb", borderRadius: 999, padding: "2px 8px" }}>Attention</span>}
                 </div>
-                <div style={{ fontSize: 25, fontWeight: 700, marginTop: 7, letterSpacing: "-.02em", color: c.urgent ? "#b3261e" : "#0c1d2e" }}>{c.value}</div>
+                <div className="wt-money" style={{ fontSize: 29, marginTop: 8, color: c.urgent ? "#b3261e" : undefined }}>{c.value}</div>
                 <div style={{ fontSize: 11.5, color: "#8a97a6", marginTop: 3 }}>{c.sub}</div>
               </div>
             </Link>

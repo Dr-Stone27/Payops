@@ -50,7 +50,7 @@ export default async function ExceptionsPage() {
       <div style={{ marginBottom: 22 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, letterSpacing: "-.02em", color: "#0c1d2e" }}>Exception Queue</h1>
         <p style={{ fontSize: 13.5, color: "#6b7785", margin: "4px 0 0" }}>
-          Failed, mismatched, or timed-out payments requiring attention. Nothing here is lost — every item has a full audit trail.
+          Failed, mismatched, or blocked payments requiring attention. Nothing here is lost — every item has a full audit trail.
         </p>
       </div>
 

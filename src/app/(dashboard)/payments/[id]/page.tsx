@@ -186,7 +186,7 @@ export default function PaymentDetailPage() {
 
       {/* Facts card */}
       <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, padding: "6px 20px 4px", marginBottom: 14 }}>
-        <div style={{ fontSize: 27, fontWeight: 700, letterSpacing: "-.02em", color: "#0c1d2e", padding: "14px 0 10px", borderBottom: "1px solid #f1f3f5" }}>{formatNaira(payment.amount)}</div>
+        <div className="wt-money" style={{ fontSize: 33, padding: "16px 0 12px", borderBottom: "1px solid #f1f3f5" }}>{formatNaira(payment.amount)}</div>
         <FactRow label="Vendor account" value={`${payment.vendor.bankName} ••••${payment.vendor.nubanLast4}`} />
         {payment.costCenter && <FactRow label="Cost center" value={payment.costCenter} />}
         {payment.invoicePdfName && <FactRow label="Invoice PDF" value={payment.invoicePdfName} mono />}

@@ -62,6 +62,14 @@ input:focus, textarea:focus, select:focus {
 @keyframes wt-spin { to { transform: rotate(360deg); } }
 .wt-spin { animation: wt-spin .9s linear infinite; }
 
+/* Money is the protagonist — hero amounts (see docs/design-language.md) */
+.wt-money {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+  font-weight: 650;
+  color: #0c1d2e;
+}
+
 /* Interactive feedback — apply to buttons and button-like links */
 .wt-btn { transition: filter .12s, transform .06s, box-shadow .12s; }
 .wt-btn:hover:not(:disabled) { filter: brightness(.96); }
