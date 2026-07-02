@@ -21,7 +21,7 @@ const CATEGORY: Record<string, { label: string; desc: string; actions: string[] 
     desc: "The amount that arrived differs from the invoice amount by more than the expected bank fee. Manual review is needed.",
     actions: ["acknowledge", "cancel"],
   },
-  COMPLIANCE_REVIEW_TIMEOUT: {
+  COMPLIANCE_BLOCKED: {
     label: "Compliance Blocked",
     desc: "A checker blocked this payment during compliance review. It will not proceed. Cancel it, or raise a corrected request.",
     actions: ["cancel"],

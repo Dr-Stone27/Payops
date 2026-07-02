@@ -33,7 +33,7 @@ const TRIGGER_LABELS: Record<string, string> = {
 const EXCEPTION_LABELS: Record<string, string> = {
   PSP_FAILURE: "PSP failure",
   AMOUNT_MISMATCH: "Amount mismatch",
-  COMPLIANCE_REVIEW_TIMEOUT: "Compliance blocked",
+  COMPLIANCE_BLOCKED: "Compliance blocked",
   ORPHANED_SETTLEMENT: "Orphaned settlement",
 };
 
@@ -241,7 +241,7 @@ export default function PaymentDetailPage() {
               <div style={{ fontSize: 12, color: "#b3261e", marginTop: 3 }}>
                 {payment.exceptionCategory === "PSP_FAILURE" && "The PSP returned a failure status. No funds left your account — you can retry or cancel."}
                 {payment.exceptionCategory === "AMOUNT_MISMATCH" && `Settled amount (${formatNaira(payment.settledAmount ?? 0)}) differs from the invoice outside the NIP tolerance band. Cancel and re-raise if needed.`}
-                {payment.exceptionCategory === "COMPLIANCE_REVIEW_TIMEOUT" && "A checker blocked this payment during compliance review. It will not proceed — cancel it, or raise a corrected request."}
+                {payment.exceptionCategory === "COMPLIANCE_BLOCKED" && "A checker blocked this payment during compliance review. It will not proceed — cancel it, or raise a corrected request."}
                 {payment.exceptionCategory === "ORPHANED_SETTLEMENT" && "A settlement confirmation arrived for a payment that was already closed. Review the transaction reference with your PSP."}
               </div>
             </div>
