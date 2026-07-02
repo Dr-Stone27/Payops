@@ -31,6 +31,7 @@ model User {
   role              String
   pinFailedAttempts Int       @default(0)
   pinLockedUntil    DateTime?
+  walkthroughState  String?
   createdAt         DateTime  @default(now())
 
   sessions     Session[]

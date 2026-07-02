@@ -24,15 +24,36 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [complianceCount, exceptionCount, teamCount, approvedVendorCount, paymentCount] = await Promise.all([
+  const [complianceCount, exceptionCount, teamCount, approvedVendorCount, paymentCount, me, activityCount] = await Promise.all([
     prisma.paymentRequest.count({ where: { businessId: session.businessId, status: "compliance_review" } }),
     prisma.paymentRequest.count({ where: { businessId: session.businessId, status: "exception_queue" } }),
     prisma.user.count({ where: { businessId: session.businessId } }),
     prisma.vendor.count({ where: { businessId: session.businessId, kybStatus: "approved" } }),
     prisma.paymentRequest.count({ where: { businessId: session.businessId } }),
+    prisma.user.findUnique({ where: { id: session.userId }, select: { walkthroughState: true } }),
+    prisma.auditLog.count({
+      where: {
+        userId: session.userId,
+        action: { in: ["PAYMENT_CREATED", "PAYMENT_APPROVED", "PAYMENT_REJECTED", "COMPLIANCE_CLEARED", "COMPLIANCE_BLOCKED", "VENDOR_ADDED", "VENDOR_MANUALLY_APPROVED", "EXCEPTION_ACKNOWLEDGED"] },
+      },
+    }),
   ]);
 
   const business = await prisma.business.findUnique({ where: { id: session.businessId } });
+
+  // Walkthrough state is server-persisted per user. Users with no stored
+  // state but real platform activity predate persistence — never re-onboard them.
+  let initialDismissed: string[] = [];
+  let initialComplete = false;
+  if (me?.walkthroughState) {
+    try {
+      const s = JSON.parse(me.walkthroughState) as { d?: string[]; c?: boolean };
+      initialDismissed = Array.isArray(s.d) ? s.d : [];
+      initialComplete = Boolean(s.c);
+    } catch {}
+  } else if (activityCount > 0) {
+    initialComplete = true;
+  }
 
   return (
     <ToastProvider>
@@ -85,8 +106,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* ── Main column ── */}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", height: "100vh" }}>
         <WalkthroughProvider
-          userId={session.userId}
           role={session.role}
+          initialDismissed={initialDismissed}
+          initialComplete={initialComplete}
           hasApprovedVendor={approvedVendorCount > 0}
           hasPayments={paymentCount > 0}
           hasTeamMember={teamCount > 1}
