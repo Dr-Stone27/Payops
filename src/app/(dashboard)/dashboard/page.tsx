@@ -151,7 +151,7 @@ export default async function DashboardPage() {
                 const badge = STATUS_BADGE[p.status] ?? STATUS_BADGE.cancelled;
                 const av = avatarColor(p.vendor.legalName);
                 return (
-                  <Link key={p.id} href={`/payments/${p.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 19px", textDecoration: "none", borderTop: i === 0 ? "none" : "1px solid #f1f3f5" }}>
+                  <Link key={p.id} href={`/payments/${p.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 19px", textDecoration: "none", borderTop: i === 0 ? "none" : "1px solid #f1f3f5" }}>
                     <div style={{ width: 30, height: 30, borderRadius: 8, background: av.bg, color: av.fg, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{getInitials(p.vendor.legalName)}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#0c1d2e" }}>{p.vendor.legalName}</div>
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
                         {isChecker ? <>Raised by {p.maker.fullName} · awaiting your PIN approval</> : <>Raised by you</>}
                       </div>
                     </div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0c1d2e", flexShrink: 0 }}>{formatNaira(p.amount)}</div>
+                    <div className="wt-money" style={{ fontSize: 15.5, flexShrink: 0 }}>{formatNaira(p.amount)}</div>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, padding: "3px 9px 3px 7px", borderRadius: 999, background: badge.bg, color: badge.fg, flexShrink: 0 }}>
                       <span style={{ width: 5, height: 5, borderRadius: "50%", background: badge.dot }} />
                       {badge.label}
@@ -199,7 +199,7 @@ export default async function DashboardPage() {
                   <span style={{ fontSize: 12, fontWeight: 500, color: "#6b7785" }}>{c.label}</span>
                   {c.urgent && <span style={{ fontSize: 10, fontWeight: 600, color: "#b3261e", background: "#fdeceb", borderRadius: 999, padding: "2px 8px" }}>Attention</span>}
                 </div>
-                <div style={{ fontSize: 25, fontWeight: 700, marginTop: 7, letterSpacing: "-.02em", color: c.urgent ? "#b3261e" : "#0c1d2e" }}>{c.value}</div>
+                <div className="wt-money" style={{ fontSize: 29, marginTop: 8, color: c.urgent ? "#b3261e" : undefined }}>{c.value}</div>
                 <div style={{ fontSize: 11.5, color: "#8a97a6", marginTop: 3 }}>{c.sub}</div>
               </div>
             </Link>
@@ -223,7 +223,7 @@ export default async function DashboardPage() {
                   <span style={{ width: 7, height: 7, borderRadius: "50%", background: meta.dot, flexShrink: 0 }} />
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: "#0c1d2e", width: 190, flexShrink: 0 }}>{meta.label}</span>
                   <span style={{ flex: 1, fontSize: 12, color: "#6b7785", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {e.user?.fullName ?? "System"}{e.detail ? ` — ${e.detail}` : ""}
+                    {e.user ? `${e.user.fullName}${e.detail ? ` — ${e.detail}` : ""}` : (e.detail ?? "Automatic")}
                   </span>
                   <span style={{ fontSize: 11.5, color: "#98a3b0", flexShrink: 0 }}>
                     {new Date(e.createdAt).toLocaleString("en-NG", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}

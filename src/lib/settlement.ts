@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { getNipTolerance } from "./compliance";
+import { getNipTolerance, formatNaira } from "./compliance";
 import { log } from "./audit";
 
 export interface SettlementInput {
@@ -126,7 +126,7 @@ export async function reconcileSettlement(input: SettlementInput): Promise<Settl
         businessId,
         paymentId,
         action: "PAYMENT_RECONCILED",
-        detail: `Settled: ${settledAmount} kobo. Variance: ${variance} kobo (within tolerance).`,
+        detail: `Settled ${formatNaira(settledAmount)} · variance ${formatNaira(variance)} (within NIP tolerance).`,
         outcome: "reconciled",
       });
       return { ok: true, outcome: "reconciled" };
@@ -145,7 +145,7 @@ export async function reconcileSettlement(input: SettlementInput): Promise<Settl
       businessId,
       paymentId,
       action: "RECONCILIATION_FAILED",
-      detail: `Amount mismatch: settled ${settledAmount}, expected ${payment.amount}. Variance: ${variance} kobo.`,
+      detail: `Settled ${formatNaira(settledAmount)} · expected ${formatNaira(payment.amount)} · variance ${formatNaira(variance)} (outside NIP tolerance).`,
       outcome: "exception_queue",
     });
     return { ok: true, outcome: "AMOUNT_MISMATCH" };

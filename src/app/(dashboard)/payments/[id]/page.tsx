@@ -162,12 +162,7 @@ export default function PaymentDetailPage() {
   return (
     <div style={{ padding: "30px 36px 80px", maxWidth: 680, margin: "0 auto" }}>
       <div style={{ marginBottom: 24 }}>
-        <Link href="/payments" style={{ fontSize: 12.5, color: "#8a97a6", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 500 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          Payments
-        </Link>
-
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginTop: 12 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 11, background: vendorAv.bg, color: vendorAv.fg, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{vendorIni}</div>
             <div>
@@ -186,7 +181,13 @@ export default function PaymentDetailPage() {
 
       {/* Facts card */}
       <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, padding: "6px 20px 4px", marginBottom: 14 }}>
-        <div style={{ fontSize: 27, fontWeight: 700, letterSpacing: "-.02em", color: "#0c1d2e", padding: "14px 0 10px", borderBottom: "1px solid #f1f3f5" }}>{formatNaira(payment.amount)}</div>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 14, padding: "16px 0 12px", borderBottom: "1px solid #f1f3f5" }}>
+          <div className="wt-money" style={{ fontSize: 33 }}>{formatNaira(payment.amount)}</div>
+          <div style={{ textAlign: "right", paddingBottom: 5 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 600, color: "#9aa6b2", letterSpacing: ".06em", textTransform: "uppercase" }}>Invoice</div>
+            <div style={{ fontSize: 13, color: "#3f4d5a", fontFamily: "var(--font-mono)" }}>{payment.invoiceNumber}</div>
+          </div>
+        </div>
         <FactRow label="Vendor account" value={`${payment.vendor.bankName} ••••${payment.vendor.nubanLast4}`} />
         {payment.costCenter && <FactRow label="Cost center" value={payment.costCenter} />}
         {payment.invoicePdfName && <FactRow label="Invoice PDF" value={payment.invoicePdfName} mono />}
@@ -271,10 +272,18 @@ export default function PaymentDetailPage() {
 
       {/* Compliance review */}
       {payment.status === "compliance_review" && (
-        <div style={{ background: "#fdeee2", border: "1px solid #f6cdb0", borderRadius: 13, padding: "16px 20px", marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#9a4513", marginBottom: 4 }}>Compliance Review Required</div>
-          <div style={{ fontSize: 12.5, color: "#8a4010", marginBottom: 14 }}>
-            <strong>Trigger:</strong> {TRIGGER_LABELS[payment.complianceTrigger ?? ""] ?? payment.complianceTrigger}
+        <div style={{ background: "#fff", border: "1px solid #f6cdb0", borderRadius: 13, padding: "18px 20px", marginBottom: 14, boxShadow: "0 0 0 3px rgba(224,114,53,.06)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 13, marginBottom: 14 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: "#fdeee2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e07235" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0c1d2e", marginBottom: 3 }}>Compliance review required</div>
+              <div style={{ fontSize: 12.5, color: "#3f4d5a", lineHeight: 1.6 }}>
+                Watchtower held this payment before approval: <strong style={{ color: "#9a4513" }}>{TRIGGER_LABELS[payment.complianceTrigger ?? ""] ?? payment.complianceTrigger}</strong>.
+                A checker who did not raise it must clear or block it — the decision lands on the audit trail.
+              </div>
+            </div>
           </div>
           {error && <div style={{ marginBottom: 12, padding: "9px 12px", background: "#fdeceb", border: "1px solid #f1c5c1", borderRadius: 8, fontSize: 12.5, color: "#b3261e" }}>{error}</div>}
           {isChecker && !isMaker && !isComplianceResolver ? (
@@ -289,10 +298,10 @@ export default function PaymentDetailPage() {
               </button>
             </div>
           ) : (
-            <div style={{ fontSize: 12.5, color: "#8a4010" }}>
+            <div style={{ fontSize: 12.5, color: "#8a4010", background: "#fef6ee", border: "1px solid #f6cdb0", borderRadius: 9, padding: "10px 13px", lineHeight: 1.55 }}>
               {isMaker
-                ? "You created this request and cannot action the compliance review."
-                : "Awaiting Checker review."}
+                ? "You raised this request, so the review isn't yours to action — a different checker decides. This separation is recorded on the audit trail."
+                : "Awaiting a checker's decision."}
             </div>
           )}
         </div>
@@ -331,12 +340,25 @@ export default function PaymentDetailPage() {
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 12.5, color: "#6b7785", padding: "12px 14px", background: "#f5f6f8", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <span>
-                {isMaker ? "You created this request and cannot approve it (Maker-Checker rule)." :
-                 isComplianceResolver ? "You cleared the compliance review for this payment and cannot also approve it (four-eyes rule)." :
-                 "You do not have permission to approve this payment."}
-              </span>
+            <div style={{ padding: "16px 18px", background: "#f6f8f7", border: "1px solid #dcebe4", borderRadius: 11, display: "flex", alignItems: "flex-start", gap: 13 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: "#ecf6f1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0e7a5a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#0c1d2e", marginBottom: 4 }}>
+                  {isMaker ? "The maker-checker rule applies" :
+                   isComplianceResolver ? "The four-eyes rule applies" :
+                   "A checker must approve this"}
+                </div>
+                <div style={{ fontSize: 12.5, color: "#3f4d5a", lineHeight: 1.6 }}>
+                  {isMaker ? "You raised this request, so you cannot approve it — no payment leaves on one person's say-so. A different checker will review and approve with their PIN." :
+                   isComplianceResolver ? "You cleared this payment's compliance review, so a different checker must give the final approval. One person never holds both keys." :
+                   "You do not have permission to approve payments. An admin or owner completes this step."}
+                </div>
+                <div style={{ fontSize: 11.5, color: "#8a97a6", marginTop: 8 }}>
+                  This block is Watchtower working as designed — it is recorded on the audit trail.
+                </div>
+              </div>
               {isMaker && (
                 <button onClick={handleCancel} disabled={loading}
                   style={{ fontSize: 12, fontWeight: 600, color: "#b3261e", background: "transparent", border: "1px solid #f1c5c1", borderRadius: 8, padding: "6px 12px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", flexShrink: 0, opacity: loading ? 0.5 : 1 }}>
@@ -350,10 +372,13 @@ export default function PaymentDetailPage() {
 
       {payment.status === "pending_approval" && !isChecker && (
         <div style={{ background: "#fcf7e6", border: "1px solid #e8d28a", borderRadius: 13, padding: "14px 18px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#8a6510", marginBottom: 3 }}>Awaiting Checker approval</div>
-              <div style={{ fontSize: 12, color: "#9a7820" }}>An Admin or Owner must review and approve this payment request.</div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 13 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: "#fcf7e6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08a1a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="1"/><path d="M12 12v3"/></svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0c1d2e", marginBottom: 3 }}>Awaiting checker approval</div>
+              <div style={{ fontSize: 12.5, color: "#3f4d5a", lineHeight: 1.6 }}>An admin or owner reviews the invoice against the amount, then approves with their PIN. Nothing moves until they do.</div>
             </div>
             {isMaker && (
               <button onClick={handleCancel} disabled={loading}
