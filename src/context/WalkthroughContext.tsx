@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { getStepsForRole, getTotalStepsLabel, type WalkthroughStep } from "@/lib/walkthrough";
+import { saveWalkthroughState } from "@/actions/walkthrough";
 
 interface WalkthroughContextValue {
   dismissStep: (key: string) => void;
@@ -26,57 +27,42 @@ export function useWalkthrough() {
 }
 
 interface Props {
-  userId: string;
   role: string;
+  // Server-persisted state (User.walkthroughState), already parsed by the layout.
+  initialDismissed: string[];
+  initialComplete: boolean;
   hasApprovedVendor: boolean;
   hasPayments: boolean;
   hasTeamMember: boolean;
   children: React.ReactNode;
 }
 
-export function WalkthroughProvider({ userId, role, hasApprovedVendor, hasPayments, hasTeamMember, children }: Props) {
-  const storageKey = `wt_wt_${userId}`;
+export function WalkthroughProvider({ role, initialDismissed, initialComplete, hasApprovedVendor, hasPayments, hasTeamMember, children }: Props) {
   const steps = getStepsForRole(role);
   const totalSteps = getTotalStepsLabel(role);
   const pathname = usePathname();
 
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const [isComplete, setIsComplete] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const { d, c } = JSON.parse(raw);
-        setDismissed(new Set(d ?? []));
-        setIsComplete(c ?? false);
-      }
-    } catch {}
-    setHydrated(true);
-  }, [storageKey]);
-
-  const persist = useCallback((d: Set<string>, c: boolean) => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify({ d: [...d], c }));
-    } catch {}
-  }, [storageKey]);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set(initialDismissed));
+  const [isComplete, setIsComplete] = useState(initialComplete);
 
   const dismissStep = useCallback((key: string) => {
     setDismissed(prev => {
       const next = new Set(prev);
       next.add(key);
-      persist(next, isComplete);
+      void saveWalkthroughState([...next], isComplete);
       return next;
     });
-  }, [isComplete, persist]);
+  }, [isComplete]);
 
   const completeWalkthrough = useCallback(() => {
     setIsComplete(true);
-    setDismissed(prev => { persist(prev, true); return prev; });
-  }, [persist]);
+    setDismissed(prev => {
+      void saveWalkthroughState([...prev], true);
+      return prev;
+    });
+  }, []);
 
-  const activeStep = hydrated && !isComplete
+  const activeStep = !isComplete
     ? steps.find(step => {
         if (dismissed.has(step.key)) return false;
         if (!step.paths.includes(pathname)) return false;
