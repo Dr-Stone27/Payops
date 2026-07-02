@@ -151,7 +151,7 @@ export default async function DashboardPage() {
                 const badge = STATUS_BADGE[p.status] ?? STATUS_BADGE.cancelled;
                 const av = avatarColor(p.vendor.legalName);
                 return (
-                  <Link key={p.id} href={`/payments/${p.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 19px", textDecoration: "none", borderTop: i === 0 ? "none" : "1px solid #f1f3f5" }}>
+                  <Link key={p.id} href={`/payments/${p.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 19px", textDecoration: "none", borderTop: i === 0 ? "none" : "1px solid #f1f3f5" }}>
                     <div style={{ width: 30, height: 30, borderRadius: 8, background: av.bg, color: av.fg, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{getInitials(p.vendor.legalName)}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#0c1d2e" }}>{p.vendor.legalName}</div>
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
                         {isChecker ? <>Raised by {p.maker.fullName} · awaiting your PIN approval</> : <>Raised by you</>}
                       </div>
                     </div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0c1d2e", flexShrink: 0 }}>{formatNaira(p.amount)}</div>
+                    <div className="wt-money" style={{ fontSize: 15.5, flexShrink: 0 }}>{formatNaira(p.amount)}</div>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, padding: "3px 9px 3px 7px", borderRadius: 999, background: badge.bg, color: badge.fg, flexShrink: 0 }}>
                       <span style={{ width: 5, height: 5, borderRadius: "50%", background: badge.dot }} />
                       {badge.label}

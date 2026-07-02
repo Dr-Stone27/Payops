@@ -181,7 +181,13 @@ export default function PaymentDetailPage() {
 
       {/* Facts card */}
       <div style={{ background: "#fff", border: "1px solid #e8eaed", borderRadius: 13, padding: "6px 20px 4px", marginBottom: 14 }}>
-        <div className="wt-money" style={{ fontSize: 33, padding: "16px 0 12px", borderBottom: "1px solid #f1f3f5" }}>{formatNaira(payment.amount)}</div>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 14, padding: "16px 0 12px", borderBottom: "1px solid #f1f3f5" }}>
+          <div className="wt-money" style={{ fontSize: 33 }}>{formatNaira(payment.amount)}</div>
+          <div style={{ textAlign: "right", paddingBottom: 5 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 600, color: "#9aa6b2", letterSpacing: ".06em", textTransform: "uppercase" }}>Invoice</div>
+            <div style={{ fontSize: 13, color: "#3f4d5a", fontFamily: "var(--font-mono)" }}>{payment.invoiceNumber}</div>
+          </div>
+        </div>
         <FactRow label="Vendor account" value={`${payment.vendor.bankName} ••••${payment.vendor.nubanLast4}`} />
         {payment.costCenter && <FactRow label="Cost center" value={payment.costCenter} />}
         {payment.invoicePdfName && <FactRow label="Invoice PDF" value={payment.invoicePdfName} mono />}
@@ -366,10 +372,13 @@ export default function PaymentDetailPage() {
 
       {payment.status === "pending_approval" && !isChecker && (
         <div style={{ background: "#fcf7e6", border: "1px solid #e8d28a", borderRadius: 13, padding: "14px 18px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#8a6510", marginBottom: 3 }}>Awaiting Checker approval</div>
-              <div style={{ fontSize: 12, color: "#9a7820" }}>An Admin or Owner must review and approve this payment request.</div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 13 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: "#fcf7e6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b08a1a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="1"/><path d="M12 12v3"/></svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0c1d2e", marginBottom: 3 }}>Awaiting checker approval</div>
+              <div style={{ fontSize: 12.5, color: "#3f4d5a", lineHeight: 1.6 }}>An admin or owner reviews the invoice against the amount, then approves with their PIN. Nothing moves until they do.</div>
             </div>
             {isMaker && (
               <button onClick={handleCancel} disabled={loading}
